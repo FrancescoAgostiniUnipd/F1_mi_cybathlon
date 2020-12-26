@@ -1,35 +1,40 @@
-% DATA LOADER FUNCTION CLASS
-%
-% Description: Collection of utils and functions userd for load 
-%              and chain .gdf EEG description file on workspace
-%
-% Authors: Agostini Francesco (francesco.agostini.5@studenti.unipd.it)
-%          Deschaux Ophèlie   (opheliecandicemarine.deschaux@studenti.unipd.it)
-%          Marcon Francesco   (francesco.marcon.2@studenti.unipd.it)
-%
-% Version: 0.1
-%
+%% DATA LOADER FUNCTION CLASS 
+%{
+Description: Collection of utils and functions userd for load 
+              and chain .gdf EEG description file on workspace
+
+Authors: Agostini Francesco (francesco.agostini.5@studenti.unipd.it)
+          Deschaux Ophèlie   (opheliecandicemarine.deschaux@studenti.unipd.it)
+          Marcon Francesco   (francesco.marcon.2@studenti.unipd.it)
+
+Version: 0.1
+
+%}
+%% Class Dataloader definition
 classdef DataLoader
-    
+    %% Class Properties 
     properties
-        datapath   
-        channelLb  
-        channelId 
-        classId    
-        classLb    
-        nclasses  
-        modalityId
-        modalityLb 
-        sessionsNames
-        sessionsPaths
-        sessionsData
+        datapath        % Path where data are stored
+        datasample      % Sample frequency
+        channelLb       % Label fot EEG channels
+        channelId       % Channel ID number
+        classId         % ID of classes vector
+        classLb         % Classes description vector
+        nclasses        % N of classes
+        modalityId      % ID of modality
+        modalityLb      % Label of modality (online ~ offline)
+        sessionsNames   % Sessions names present in data directory
+        sessionsPaths   % sessions path correspondent to sessions names
+        sessionsData    % sessions data correspondent to sessions names
     end
     
+    %% Class constructor and loader method
     methods
-
+        %% Constructor
         function obj = DataLoader()
             % Setting up env
             obj.datapath   = '../data/';
+            obj.datasample = 512;
             obj.channelLb  = {'Fz','FC3','FC1','FCz','FC2','FC4','C3','C1','Cz','C2','C4','CP3','CP1','CPz','CP2','CP4'};
             obj.channelId  = 1:length(obj.channelLb);
             obj.classId    = [786 773 771 783 781 897 898];
@@ -39,11 +44,15 @@ classdef DataLoader
             obj.modalityLb = {'offline','online'};
             obj.sessionsData = [];
             % Start loading data names
+            sprintf("\n\nStart loading sessions ... \n");
             obj = obj.listSessions();
             % Start loading gdf files
             obj = obj.loadSessions();
+            
+            sprintf("\nAll %d sessions loaded correctly!\n\n",length(obj.sessionsNames));
         end
         
+        %% Sessions detector by path
         function obj = listSessions(obj)
             sessions = dir(obj.datapath);
             dfolders = sessions([sessions(:).isdir]);
@@ -53,17 +62,19 @@ classdef DataLoader
               obj.sessionsPaths{i} = fullfile(obj.datapath,obj.sessionsNames{i});
             end
         end
-
+        
+        %% Sessions loader by path
         function obj = loadSessions(obj)
             % First of all load Biosig
             obj.loadBiosig();
             
             for i = 1 : length(obj.sessionsPaths)
-                fprintf("\n\nLoading session #%d %s \n",i,obj.sessionsPaths{i});
+                fprintf("Loading session #%d %s \n",i,obj.sessionsPaths{i});
                 obj = obj.loadSession(obj.sessionsPaths{i},i);
             end
         end
         
+        %% Single session loader by path and number
         function obj = loadSession(obj,path,n)
             gdfPath = fullfile(path,'*.gdf');
             gdfs = dir(gdfPath);
@@ -73,7 +84,7 @@ classdef DataLoader
             
             for i = 1 : length(gdfs)
                 obj.sessionsData{n}.filenames{i} = fullfile(path,gdfs(i).name);
-                fprintf("Loading file #%d %s\n",i,obj.sessionsData{n}.filenames{i});
+                %fprintf("Loading file #%d %s\n",i,obj.sessionsData{n}.filenames{i});
             end
            
             
@@ -87,7 +98,7 @@ classdef DataLoader
             obj.sessionsData{n}.Mk=[];
              
             for fId=1:nfiles
-                disp(['Loading files (' num2str(fId) '/' num2str(nfiles) '...']); 
+                %disp(['Loading files (' num2str(fId) '/' num2str(nfiles)'...']);
                 [curr_s, curr_h] = sload(obj.sessionsData{n}.filenames{fId});
 
                 obj.sessionsData{n}.TYP = cat(1,obj.sessionsData{n}.TYP,curr_h.EVENT.TYP);
@@ -113,20 +124,23 @@ classdef DataLoader
             
         end
         
-        % Getters
         
+        %% Getter for sessions names
         function sessionsNames = getSessionsNames(obj)
             sessionsNames = obj.sessionsNames;
         end
         
+        %% Getter for sessions paths
         function sessionsPaths = getSessionsPaths(obj)
             sessionsPaths = obj.sessionsPaths;
         end
         
+        %% Getter for sessions data
         function sessionsData = getSessionsData(obj)
             sessionsData = obj.sessionsData;
         end
         
+        %% Getter for session data by name
         function sessionData = getSessionByName(obj,name)
             for i=1:length(obj.sessionsNames)
                 if name == obj.sessionsNames{i}
@@ -135,6 +149,7 @@ classdef DataLoader
             end
         end
         
+        %% Getter for session data by ID
         function sessionData = getSessionById(obj,i)
             sessionData = obj.sessionsData{i};
         end
@@ -142,7 +157,10 @@ classdef DataLoader
         
     end % methods
     
+    %% Static methods
     methods (Static)
+        
+        %% Biosig loader method
         function loadBiosig()
             %Loading BIOSig Util 3.7.2
             fprintf("Loading Biosig v3.7.2...\n");
