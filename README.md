@@ -1,6 +1,11 @@
 # Project 5
 ## Longitudinal analyses on MI BMI data
 
+### Authors:
+Ophélie Deschaux
+Francesco Marcon
+Francesco Agostini
+
 ### Objective: Students are asked to analyze the data collected during the Cybathlon training of pilot F1 and to highlight the learning correlates.
 
 ### Data description:
