@@ -1,0 +1,7 @@
+%MAIN
+
+%Adding functions
+addpath("./Function/");
+
+DataLoader.loadBiosig();
+loader = DataLoader;
