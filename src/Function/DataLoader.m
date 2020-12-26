@@ -1,5 +1,5 @@
 % DATA LOADER FUNCTION CLASS
-
+%
 % Description: Collection of utils and functions userd for load 
 %              and chain .gdf EEG description file on workspace
 %
@@ -8,7 +8,7 @@
 %          Marcon Francesco   (francesco.marcon.2@studenti.unipd.it)
 %
 % Version: 0.1
-
+%
 classdef DataLoader
     
     properties
@@ -112,6 +112,33 @@ classdef DataLoader
             end
             
         end
+        
+        % Getters
+        
+        function sessionsNames = getSessionsNames(obj)
+            sessionsNames = obj.sessionsNames;
+        end
+        
+        function sessionsPaths = getSessionsPaths(obj)
+            sessionsPaths = obj.sessionsPaths;
+        end
+        
+        function sessionsData = getSessionsData(obj)
+            sessionsData = obj.sessionsData;
+        end
+        
+        function sessionData = getSessionByName(obj,name)
+            for i=1:length(obj.sessionsNames)
+                if name == obj.sessionsNames{i}
+                    sessionData = obj.sessionsData{i};
+                end
+            end
+        end
+        
+        function sessionData = getSessionById(obj,i)
+            sessionData = obj.sessionsData{i};
+        end
+        
         
     end % methods
     
