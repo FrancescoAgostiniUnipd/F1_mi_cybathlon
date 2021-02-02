@@ -4,7 +4,7 @@ Description: Collection of utils and functions userd for load
               and chain .gdf EEG description file on workspace
 
 Authors: Agostini Francesco (francesco.agostini.5@studenti.unipd.it)
-          Deschaux OphÃ¨lie   (opheliecandicemarine.deschaux@studenti.unipd.it)
+          Deschaux Ophélie   (opheliecandicemarine.deschaux@studenti.unipd.it)
           Marcon Francesco   (francesco.marcon.2@studenti.unipd.it)
 
 Version: 0.1
@@ -164,7 +164,7 @@ classdef DataLoader
         function loadBiosig()
             %Loading BIOSig Util 3.7.2
             fprintf("Loading Biosig v3.7.2...\n");
-            addpath("./Util/biosig4octmat-3.7.2/biosig/t200_FileAccess","./Util/biosig4octmat-3.7.2/biosig/t210_Events","./Util/biosig4octmat-3.7.2/biosig/t250_ArtifactPreProcessingQualityControl","./Util/biosig4octmat-3.7.2/biosig/t300_FeatureExtraction","./Util/biosig4octmat-3.7.2/biosig/t310_ERDSMaps","./Util/biosig4octmat-3.7.2/biosig/t320_Nirs","./Util/biosig4octmat-3.7.2/biosig/t330_StimFit","./Util/biosig4octmat-3.7.2/biosig/t400_Classification","./Util/biosig4octmat-3.7.2/biosig/t450_MultipleTestStatistic","./Util/biosig4octmat-3.7.2/biosig/t490_EvaluationCriteria","./Util/biosig4octmat-3.7.2/biosig/t500_Visualization","./Util/biosig4octmat-3.7.2/biosig/t501_VisualizeCoupling");
+            addpath('./Util/biosig4octmat-3.7.2/biosig/t200_FileAccess','./Util/biosig4octmat-3.7.2/biosig/t210_Events','./Util/biosig4octmat-3.7.2/biosig/t250_ArtifactPreProcessingQualityControl','./Util/biosig4octmat-3.7.2/biosig/t300_FeatureExtraction','./Util/biosig4octmat-3.7.2/biosig/t310_ERDSMaps','./Util/biosig4octmat-3.7.2/biosig/t320_Nirs','./Util/biosig4octmat-3.7.2/biosig/t330_StimFit','./Util/biosig4octmat-3.7.2/biosig/t400_Classification','./Util/biosig4octmat-3.7.2/biosig/t450_MultipleTestStatistic','./Util/biosig4octmat-3.7.2/biosig/t490_EvaluationCriteria','./Util/biosig4octmat-3.7.2/biosig/t500_Visualization','./Util/biosig4octmat-3.7.2/biosig/t501_VisualizeCoupling');
         end
     
     end % methods (Static)
