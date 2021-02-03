@@ -20,6 +20,8 @@ classdef DataLoader
         channelId       % Channel ID number
         classId         % ID of classes vector
         classLb         % Classes description vector
+        classAllId      % ID of classes vector ALL
+        classAllLb      % Classes description vector ALL
         nclasses        % N of classes
         modalityId      % ID of modality
         modalityLb      % Label of modality (online ~ offline)
@@ -37,8 +39,10 @@ classdef DataLoader
             obj.datasample = 512;
             obj.channelLb  = {'Fz','FC3','FC1','FCz','FC2','FC4','C3','C1','Cz','C2','C4','CP3','CP1','CPz','CP2','CP4'};
             obj.channelId  = 1:length(obj.channelLb);
-            obj.classId    = [786 773 771 783 781 897 898];
-            obj.classLb    = {'Fixation cross','Both hands','Both feet','Rest','Continuos feedback','Target hint','Target miss'}; % we have to add class labels
+            obj.classAllId = [786 773 771 783 781 897 898];
+            obj.classId    = [773 771];
+            obj.classAllLb = {'Fixation cross','Both hands','Both feet','Rest','Continuos feedback','Target hint','Target miss'}; % we have to add class labels
+            obj.classLb    = {'Both hands','Both feet'}; % we have to add class labels
             obj.nclasses   = length(obj.classId);
             obj.modalityId = [0 1];
             obj.modalityLb = {'offline','online'};

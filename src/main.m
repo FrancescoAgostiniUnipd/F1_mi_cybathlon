@@ -16,6 +16,8 @@ sessionsData  = data.getSessionsData();   % Load Sessions Data
 session1      = data.getSessionById(1);    % Load data of session #1
 session2      = data.getSessionByName("20190711_F1");   % Load data of session 20190711_F1
 
+
+
 %% Example of data usage from a sessions
 
 disp(session1.SampleRate)     % Display Sample rate
