@@ -188,9 +188,11 @@ NumChans = size(U, 3);
 
 
 %% from ex5_classification_train.m
-Rk = ones(size(U, 1), 1);
+%Rk = ones(size(U, 1), 1);
+Rk = session1.Rk;
 Runs = unique(Rk);
-NumRuns = length(Runs);
+NumRuns = 3;
+%NumRuns = length(Runs);
 
 % %% Labeling the data
 % disp('[proc] + Labeling the data');
@@ -207,6 +209,7 @@ NumRuns = length(Runs);
 % We consider the intersting period from Cue apperance to end of continuous feedback
 Ck = zeros(NumWins, 1);
 Tk = zeros(NumWins, 1);
+
 for trId = 1:NumTrials
     cstart = CuePOS(trId);
     cstop  = CFeedbackPOS(trId) + CFeedbackDUR(trId) - 1;
@@ -216,9 +219,8 @@ end
 
 %% Computing fisher score (for each run)
 disp('[proc] + Computing fisher score');
-Classes = [771 773 ];
-%Classes = data.classId;
-NumClasses = length(Classes);
+
+NumClasses = length(data.classId);
 
 FisherScore = nan(NumFreqs, NumChans, NumRuns);
 FS2 = nan(NumFreqs*NumChans, NumRuns);
@@ -229,7 +231,7 @@ for rId = 1:NumRuns
     csigma = nan(NumFreqs, NumChans, 2);
     
     for cId = 1:NumClasses
-        cindex = rindex & Ck == Classes(cId);
+        cindex = rindex & Ck == data.classId(cId);
         cmu(:, :, cId) = squeeze(mean(U(cindex, :, :)));
         csigma(:, :, cId) = squeeze(std(U(cindex, :, :)));
     end
@@ -295,7 +297,7 @@ SSAcc = 100*sum(Gk(LabelIdx) == Ck(LabelIdx))./length(Gk(LabelIdx));
 
 SSClAcc = nan(NumClasses, 1);
 for cId = 1:NumClasses
-    cindex = Ck == Classes(cId);
+    cindex = Ck == data.classId(cId);
     SSClAcc(cId) = 100*sum(Gk(cindex) == Ck(cindex))./length(Gk(cindex));
 end
 
