@@ -13,8 +13,18 @@ sessionsNames = data.getSessionsNames();  % Load Sessions names
 sessionsPath  = data.getSessionsPaths();  % Load Sessions Path
 sessionsData  = data.getSessionsData();   % Load Sessions Data
 
-session1      = data.getSessionById(1);    % Load data of session #1
-session2      = data.getSessionByName("20190711_F1");   % Load data of session 20190711_F1
+% Session 1 example
+session1        = data.getSessionById(1);                 % Load all data of session #1
+sessionOnline1  = data.getSessionOnlineById(1);           % Load all online data of session #1
+sessionOffline1 = data.getSessionOfflineById(1);          % Load all offline data of session #1
+allRuns         = data.allRuns{1};                        % overall runs in session 1
+offlineRuns     = data.offlineRuns{1};                    % offline runs in session 1
+onlineRuns      = data.onlineRuns{1};                     % online runs in session 1
+
+
+session2        = data.getSessionByName("20190711_F1");         % Load data of session 20190711_F1
+sessionOnline2  = data.getSessionOnlineByName("20190711_F1");   % Load data of session 20190711_F1
+sessionOffline2 = data.getSessionOfflineByName("20190711_F1");  % Load data of session 20190711_F1
 
 
 
