@@ -1,5 +1,5 @@
 %% MAIN SCRIPT
-
+clear all; close all; clc;
 % Adding functions class
 addpath('./Function/');
 addpath('./Util/');
@@ -23,6 +23,7 @@ offlineRuns1    = data.offlineRuns{1};                    % offline runs in sess
 onlineRuns1     = data.onlineRuns{1};                     % online runs in session 1
 
 
+
 session2        = data.getSessionByName("20190711_F1");         % Load data of session 20190711_F1
 sessionOnline2  = data.getSessionOnlineByName("20190711_F1");   % Load data of session 20190711_F1
 sessionOffline2 = data.getSessionOfflineByName("20190711_F1");  % Load data of session 20190711_F1
@@ -35,7 +36,7 @@ disp(session1.SampleRate)     % Display Sample rate
 figure;
 subplot(3,2,1);
 s1 = session1.s(:,1:16); % because the column 17 is empty
-plot(s1);   % Plot samples
+plot(sessionOffline1.P);   % Plot samples
 title('samples')
 subplot(3,2,2);
 plot(session1.TYP);           % Plot session TYP vector 
@@ -69,16 +70,15 @@ load('./Util/laplacian16.mat');
 s_lap = s1*lap;
 
 
-
 %% Spectrogram (PSD)
 disp('[proc] |- Computing spectrogram');
 [P, freqgrid] = proc_spectrogram(s_lap, wlength, wshift, pshift, session1.SampleRate, mlength);  
-
+size(P)
 
 %% Selecting desired frequencies
 [freqs, idfreqs] = intersect(freqgrid, selfreqs);
 P = P(:, idfreqs, :);
-
+size(P)
 %% Extracting events
 disp('[proc] |- Extract and convert the events');
 events.TYP = session1.TYP;
@@ -87,21 +87,22 @@ events.DUR = floor(session1.DUR/(wshift*session1.SampleRate)) + 1;
 events.conversion = winconv;
 
 %% Data information
+P = sessionOffline1.P;
 NWindows  = size(P, 1);
 NFreqs    = size(P, 2);
 NChannels = size(P, 3);
 
 %% Creating vector labels
-CFeedbackPOS = events.POS(events.TYP == 781);
-CFeedbackDUR = events.DUR(events.TYP == 781);
+CFeedbackPOS = sessionOffline1.POS(sessionOffline1.TYP == 781);
+CFeedbackDUR = sessionOffline1.DUR(sessionOffline1.TYP == 781);
 
-CuePOS = events.POS(events.TYP == 771 | events.TYP == 773 | events.TYP == 783);
-CueDUR = events.DUR(events.TYP == 771 | events.TYP == 773 | events.TYP == 783);
-CueTYP = events.TYP(events.TYP == 771 | events.TYP == 773 | events.TYP == 783);
+CuePOS = sessionOffline1.POS(sessionOffline1.TYP == 771 | sessionOffline1.TYP == 773 );
+CueDUR = sessionOffline1.DUR(sessionOffline1.TYP == 771 | sessionOffline1.TYP == 773 );
+CueTYP = sessionOffline1.TYP(sessionOffline1.TYP == 771 | sessionOffline1.TYP == 773);
 
-FixPOS = events.POS(events.TYP == 786);
-FixDUR = events.DUR(events.TYP == 786);
-FixTYP = events.TYP(events.TYP == 786);
+FixPOS = sessionOffline1.POS(sessionOffline1.TYP == 786);
+FixDUR = sessionOffline1.DUR(sessionOffline1.TYP == 786);
+FixTYP = sessionOffline1.TYP(sessionOffline1.TYP == 786);
 
 NumTrials = length(CFeedbackPOS);
 
@@ -191,9 +192,9 @@ set(chandles, 'CLim', [min(min(climits)) max(max(climits))]);
 %% Apply log to the data
 SelFreqs = 4:2:48;
 fullFreqs = sessionOffline1.freqs;
-[freqs, idfreqs] = intersect(fullfreqs, SelFreqs);
+[freqs, idfreqs] = intersect(fullFreqs, SelFreqs);
 
-U = log(P);
+U = log(sessionOffline1.P);
 
 NumWins  = size(U, 1);
 NumFreqs = size(U, 2);
@@ -201,23 +202,23 @@ NumChans = size(U, 3);
 
 
 %% from ex5_classification_train.m
-%Rk = ones(size(U, 1), 1);
-Rk = sessionOffline1.Rk;
-Runs = unique(Rk);
-NumRuns = offlineRuns1;
-%NumRuns = length(Runs);
 
-% %% Labeling the data
-% disp('[proc] + Labeling the data');
-% 
-% CFeedbackPOS = events.POS(events.TYP == 781);
-% CFeedbackDUR = events.DUR(events.TYP == 781);
-% 
-% CuePOS = events.POS(events.TYP == 771 | events.TYP == 773 | events.TYP == 783);
-% CueDUR = events.DUR(events.TYP == 771 | events.TYP == 773 | events.TYP == 783);
-% CueTYP = events.TYP(events.TYP == 771 | events.TYP == 773 | events.TYP == 783);
-% 
-% NumTrials = length(CueTYP);
+Rk = sessionOffline1.RkP;
+Runs = unique(Rk);
+%NumRuns = offlineRuns1;
+NumRuns = length(Runs);
+
+%% Labeling the data
+disp('[proc] + Labeling the data');
+
+CFeedbackPOS = sessionOffline1.POS(sessionOffline1.TYP == 781);
+CFeedbackDUR = sessionOffline1.DUR(sessionOffline1.TYP == 781);
+
+CuePOS = sessionOffline1.POS(sessionOffline1.TYP == 771 | sessionOffline1.TYP == 773 );
+CueDUR = sessionOffline1.DUR(sessionOffline1.TYP == 771 | sessionOffline1.TYP == 773 );
+CueTYP = sessionOffline1.TYP(sessionOffline1.TYP == 771 | sessionOffline1.TYP == 773 );
+
+NumTrials = length(CueTYP);
 % 
 % We consider the intersting period from Cue apperance to end of continuous feedback
 Ck = zeros(NumWins, 1);
@@ -282,8 +283,8 @@ sgtitle('Fisher score');
 
 %% Features selection
 disp('[proc] |- Select features');
-SelChans = {'C1', 'Cz', 'Cz'};
-SelFreqs = [12 24 22];
+SelChans = {'C4', 'C4', 'FC2'};
+SelFreqs = [20 22 22];
 NumSelFeatures = length(SelChans);
 
 [~, SelChansId] = ismember(SelChans, data.channelLb);

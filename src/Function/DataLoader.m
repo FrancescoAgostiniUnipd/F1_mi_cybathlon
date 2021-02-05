@@ -82,15 +82,15 @@ classdef DataLoader
         
         function [curr_P,curr_freqs,curr_ERD,curr_TYP,curr_DUR,curr_POS] = preprocessing(obj,curr_s,curr_h)
             curr_SampleRate = curr_h.SampleRate;
-            s = curr_s(:, obj.channelId);
+            s = curr_s(:, 1:16);
 
             % Applying CAR and Laplacian
             load('./Util/laplacian16.mat');
             curr_s_lap = s*lap;
-
-            % Computing spectrogram
+            
+            % Computing spectrogram            
             [curr_P, curr_freqgrid] = proc_spectrogram(curr_s_lap, obj.wlength, obj.wshift, obj.pshift, curr_SampleRate, obj.mlength);
-
+            
             %% Selecting desired frequencies
             [curr_freqs, curr_idfreqs] = intersect(curr_freqgrid, obj.selfreqs);
             curr_P = curr_P(:, curr_idfreqs, :);
@@ -216,6 +216,8 @@ classdef DataLoader
             obj.sessionsData{n}.POS = [];
             obj.sessionsData{n}.Rk  = [];
             obj.sessionsData{n}.Mk  = [];
+            obj.sessionsData{n}.RkP  = [];
+            obj.sessionsData{n}.MkP  = [];
             obj.sessionsData{n}.P     = [];
             obj.sessionsData{n}.freqs = [];
             obj.sessionsData{n}.ERD = [];
@@ -229,6 +231,8 @@ classdef DataLoader
             obj.sessionsDataOffline{n}.POS = [];
             obj.sessionsDataOffline{n}.Rk  = [];
             obj.sessionsDataOffline{n}.Mk  = [];
+            obj.sessionsDataOffline{n}.RkP  = [];
+            obj.sessionsDataOffline{n}.MkP  = [];
             obj.sessionsDataOffline{n}.P     = [];
             obj.sessionsDataOffline{n}.freqs = [];
             obj.sessionsDataOffline{n}.ERD = [];
@@ -242,6 +246,8 @@ classdef DataLoader
             obj.sessionsDataOnline{n}.POS = [];
             obj.sessionsDataOnline{n}.Rk  = [];
             obj.sessionsDataOnline{n}.Mk  = [];
+            obj.sessionsDataOnline{n}.RkP  = [];
+            obj.sessionsDataOnline{n}.MkP  = [];
             obj.sessionsDataOnline{n}.P     = [];
             obj.sessionsDataOnline{n}.freqs = [];
             obj.sessionsDataOnline{n}.ERD = [];
@@ -254,7 +260,9 @@ classdef DataLoader
                 % Do preprocessing on single file
                 [curr_P,curr_freqs,curr_ERD,curr_TYP,curr_DUR,curr_POS] = obj.preprocessing(curr_s,curr_h);
                 
+                
                 cRk = fId*ones(size(curr_s,1),1);
+                cRkP = fId*ones(size(curr_P,1),1);
                 
                 % Chain operation for Offline and Online sets
                 if( contains(obj.sessionsData{n}.filenames{fId},'offline') == true)
@@ -262,13 +270,18 @@ classdef DataLoader
                     % Offline session
                     obj.offlineRuns{n} = obj.offlineRuns{n} + 1;
                     cMk = obj.modalityId(1)*ones(size(curr_s,1),1);
+                    cMkP = obj.modalityId(1)*ones(size(curr_P,1),1);
                     
                     obj.sessionsDataOffline{n}.TYP = cat(1,obj.sessionsDataOffline{n}.TYP,curr_TYP);
                     obj.sessionsDataOffline{n}.DUR = cat(1,obj.sessionsDataOffline{n}.DUR,curr_DUR);
                     obj.sessionsDataOffline{n}.POS = cat(1,obj.sessionsDataOffline{n}.POS,curr_POS + size(obj.sessionsDataOffline{n}.P,1));
                     obj.sessionsDataOffline{n}.Rk  = cat(1,obj.sessionsDataOffline{n}.Rk,cRk);                  
                     obj.sessionsDataOffline{n}.Mk  = cat(1,obj.sessionsDataOffline{n}.Mk,cMk);
+                    obj.sessionsDataOffline{n}.RkP  = cat(1,obj.sessionsDataOffline{n}.RkP,cRkP);                  
+                    obj.sessionsDataOffline{n}.MkP  = cat(1,obj.sessionsDataOffline{n}.MkP,cMkP);
                     obj.sessionsDataOffline{n}.s   = cat(1,obj.sessionsDataOffline{n}.s,curr_s);
+                    
+                                     
                     
                     obj.sessionsDataOffline{n}.P     = cat(1,obj.sessionsDataOffline{n}.P,curr_P);
                     obj.sessionsDataOffline{n}.freqs = cat(1,obj.sessionsDataOffline{n}.freqs,curr_freqs);
@@ -284,12 +297,15 @@ classdef DataLoader
                     % Online session
                     obj.onlineRuns{n} = obj.onlineRuns{n} + 1;
                     cMk = obj.modalityId(2)*ones(size(curr_s,1),1);
+                    cMkP = obj.modalityId(2)*ones(size(curr_P,1),1);
                     
                     obj.sessionsDataOnline{n}.TYP = cat(1,obj.sessionsDataOnline{n}.TYP,curr_TYP);
                     obj.sessionsDataOnline{n}.DUR = cat(1,obj.sessionsDataOnline{n}.DUR,curr_DUR);
                     obj.sessionsDataOnline{n}.POS = cat(1,obj.sessionsDataOnline{n}.POS,curr_POS + size(obj.sessionsDataOnline{n}.P,1));
                     obj.sessionsDataOnline{n}.Rk = cat(1,obj.sessionsDataOnline{n}.Rk,cRk);
                     obj.sessionsDataOnline{n}.Mk = cat(1,obj.sessionsDataOnline{n}.Mk,cMk);
+                    obj.sessionsDataOnline{n}.RkP  = cat(1,obj.sessionsDataOnline{n}.RkP,cRkP);                  
+                    obj.sessionsDataOnline{n}.MkP  = cat(1,obj.sessionsDataOnline{n}.MkP,cMkP);
                     obj.sessionsDataOnline{n}.s = cat(1,obj.sessionsDataOnline{n}.s,curr_s);
                     
                     obj.sessionsDataOnline{n}.P     = cat(1,obj.sessionsDataOnline{n}.P,curr_P);
@@ -311,9 +327,11 @@ classdef DataLoader
                 obj.sessionsData{n}.TYP = cat(1,obj.sessionsData{n}.TYP,curr_TYP);
                 obj.sessionsData{n}.DUR = cat(1,obj.sessionsData{n}.DUR,curr_DUR);
                 obj.sessionsData{n}.POS = cat(1,obj.sessionsData{n}.POS,curr_POS + size(obj.sessionsData{n}.P,1));              
-                obj.sessionsData{n}.Rk  = cat(1,obj.sessionsData{n}.Rk,cRk);                            
+                obj.sessionsData{n}.Rk  = cat(1,obj.sessionsData{n}.Rk,cRk); 
+                obj.sessionsData{n}.RkP  = cat(1,obj.sessionsData{n}.RkP,cRkP);
                 obj.sessionsData{n}.s   = cat(1,obj.sessionsData{n}.s,curr_s);
                 obj.sessionsData{n}.Mk    = cat(1,obj.sessionsData{n}.Mk,cMk);
+                obj.sessionsData{n}.MkP    = cat(1,obj.sessionsData{n}.MkP,cMkP);
                 
                 obj.sessionsData{n}.P     = cat(1,obj.sessionsData{n}.P,curr_P);
                 obj.sessionsData{n}.freqs = cat(1,obj.sessionsData{n}.freqs,curr_freqs);
