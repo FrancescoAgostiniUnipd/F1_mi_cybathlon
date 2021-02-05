@@ -2,6 +2,7 @@
 
 % Adding functions class
 addpath('./Function/');
+addpath('./Util/');
 
 % Load Data
 data = DataLoader;
@@ -17,9 +18,9 @@ sessionsData  = data.getSessionsData();   % Load Sessions Data
 session1        = data.getSessionById(1);                 % Load all data of session #1
 sessionOnline1  = data.getSessionOnlineById(1);           % Load all online data of session #1
 sessionOffline1 = data.getSessionOfflineById(1);          % Load all offline data of session #1
-allRuns         = data.allRuns{1};                        % overall runs in session 1
-offlineRuns     = data.offlineRuns{1};                    % offline runs in session 1
-onlineRuns      = data.onlineRuns{1};                     % online runs in session 1
+allRuns1        = data.allRuns{1};                        % overall runs in session 1
+offlineRuns1    = data.offlineRuns{1};                    % offline runs in session 1
+onlineRuns1     = data.onlineRuns{1};                     % online runs in session 1
 
 
 session2        = data.getSessionByName("20190711_F1");         % Load data of session 20190711_F1
@@ -188,7 +189,9 @@ set(chandles, 'CLim', [min(min(climits)) max(max(climits))]);
 %% from ex4_features_selection_students.m
 
 %% Apply log to the data
-
+SelFreqs = 4:2:48;
+fullFreqs = sessionOffline1.freqs;
+[freqs, idfreqs] = intersect(fullfreqs, SelFreqs);
 
 U = log(P);
 
@@ -199,9 +202,9 @@ NumChans = size(U, 3);
 
 %% from ex5_classification_train.m
 %Rk = ones(size(U, 1), 1);
-Rk = session1.Rk;
+Rk = sessionOffline1.Rk;
 Runs = unique(Rk);
-NumRuns = 3;
+NumRuns = offlineRuns1;
 %NumRuns = length(Runs);
 
 % %% Labeling the data

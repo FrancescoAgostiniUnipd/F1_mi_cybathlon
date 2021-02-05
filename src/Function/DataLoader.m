@@ -7,7 +7,7 @@ Authors: Agostini Francesco (francesco.agostini.5@studenti.unipd.it)
           Deschaux Ophélie   (opheliecandicemarine.deschaux@studenti.unipd.it)
           Marcon Francesco   (francesco.marcon.2@studenti.unipd.it)
 
-Version: 0.3
+Version: 0.4
 
 %}
 %% Class Dataloader definition
@@ -25,6 +25,12 @@ classdef DataLoader
         nclasses               % N of classes
         modalityId             % ID of modality
         modalityLb             % Label of modality (online ~ offline)
+        mlength
+        wlength 
+        pshift                    
+        wshift    
+        selfreqs
+        winconv 
         sessionsNames          % Sessions names present in data directory
         sessionsPaths          % sessions path correspondent to sessions names
         sessionsData           % sessions data correspondent to sessions names
@@ -51,6 +57,12 @@ classdef DataLoader
             obj.nclasses            = length(obj.classId);
             obj.modalityId          = [0 1];
             obj.modalityLb          = {'offline','online'};
+            obj.mlength             = 1;
+            obj.wlength             = 0.5;
+            obj.pshift              = 0.25;                  
+            obj.wshift              = 0.0625;  
+            obj.selfreqs            = 4:2:96;
+            obj.winconv             = 'backward'; 
             obj.sessionsData        = [];
             obj.sessionsDataOffline = [];
             obj.sessionsDataOnline  = [];
@@ -64,7 +76,99 @@ classdef DataLoader
             % Start loading gdf files
             obj = obj.loadSessions();
             
+            
             sprintf("\nAll %d sessions loaded correctly!\n\n",length(obj.sessionsNames));
+        end
+        
+        function [curr_P,curr_freqs,curr_ERD,curr_TYP,curr_DUR,curr_POS] = preprocessing(obj,curr_s,curr_h)
+            curr_SampleRate = curr_h.SampleRate;
+            s = curr_s(:, obj.channelId);
+
+            % Applying CAR and Laplacian
+            load('./Util/laplacian16.mat');
+            curr_s_lap = s*lap;
+
+            % Computing spectrogram
+            [curr_P, curr_freqgrid] = proc_spectrogram(curr_s_lap, obj.wlength, obj.wshift, obj.pshift, curr_SampleRate, obj.mlength);
+
+            %% Selecting desired frequencies
+            [curr_freqs, curr_idfreqs] = intersect(curr_freqgrid, obj.selfreqs);
+            curr_P = curr_P(:, curr_idfreqs, :);
+            
+            %% Extracting events
+            curr_TYP = curr_h.EVENT.TYP;
+            curr_POS = proc_pos2win(curr_h.EVENT.POS, obj.wshift*curr_h.SampleRate, obj.winconv, obj.mlength*curr_h.SampleRate);
+            curr_DUR = floor(curr_h.EVENT.DUR/(obj.wshift*curr_h.SampleRate)) + 1;
+            events.conversion = obj.winconv;
+            
+            %% Data information
+            curr_NWindows  = size(curr_P, 1);
+            curr_NFreqs    = size(curr_P, 2);
+            curr_NChannels = size(curr_P, 3);
+            
+            
+            %% Creating vector labels
+            curr_CFeedbackPOS = curr_POS(curr_TYP == 781); % continuos feedback
+            curr_CFeedbackDUR = curr_DUR(curr_TYP == 781); % continuos feedback
+
+            curr_CuePOS = curr_POS(curr_TYP == 771 | curr_TYP == 773); % both hands | both feet
+            curr_CueDUR = curr_DUR(curr_TYP == 771 | curr_TYP == 773); % both hands | both feet
+            curr_CueTYP = curr_TYP(curr_TYP == 771 | curr_TYP == 773); % both hands | both feet
+
+            curr_FixPOS = curr_POS(curr_TYP == 786); % Fixation cross
+            curr_FixDUR = curr_DUR(curr_TYP == 786); % Fixation cross
+            curr_FixTYP = curr_TYP(curr_TYP == 786); % fixation cross
+            
+            curr_NumTrials = length(curr_CFeedbackPOS);
+            
+            % We consider the intersting period from Cue apperance to end of continuous feedback
+            curr_Ck = zeros(curr_NWindows, 1);
+            curr_Tk = zeros(curr_NWindows, 1);
+            curr_TrialStart = nan(curr_NumTrials, 1);
+            curr_TrialStop  = nan(curr_NumTrials, 1);
+            curr_FixStart = nan(curr_NumTrials, 1);
+            curr_FixStop  = nan(curr_NumTrials, 1);
+            for trId = 1:curr_NumTrials
+                cstart = curr_CuePOS(trId);
+                cstop  = curr_CFeedbackPOS(trId) + curr_CFeedbackDUR(trId) - 1;
+                curr_Ck(cstart:cstop) = curr_CueTYP(trId);
+                curr_Tk(cstart:cstop) = trId;
+
+                curr_TrialStart(trId) = cstart;
+                curr_TrialStop(trId)  = cstop;
+                curr_FixStart(trId)   = curr_FixPOS(trId);
+                curr_FixStop(trId)    = curr_FixPOS(trId) + curr_FixDUR(trId) - 1;
+            end
+            
+            %% Trial extraction
+
+            % Extracting data for each trial (be careful that length might be different for few sample)
+            curr_MinTrialDur = min(curr_TrialStop - curr_TrialStart);
+            curr_TrialData   = nan(curr_MinTrialDur, curr_NFreqs, curr_NChannels, curr_NumTrials);
+            curr_tCk = zeros(curr_NumTrials, 1);
+            for trId = 1:curr_NumTrials
+                cstart = curr_TrialStart(trId);
+                cstop  = cstart + curr_MinTrialDur - 1;
+                curr_TrialData(:, :, :, trId)   = curr_P(cstart:cstop, :, :);
+                curr_tCk(trId) = unique(curr_Ck(cstart:cstop));
+            end
+            
+            %% Baseline extraction (from fixation)
+            curr_MinFixDur = min(curr_FixStop - curr_FixStart);
+            curr_FixData   = nan(curr_MinFixDur, curr_NFreqs, curr_NChannels, curr_NumTrials);
+
+            for trId = 1:curr_NumTrials
+                cstart = curr_FixStart(trId);
+                cstop  = cstart + curr_MinFixDur - 1;
+                curr_FixData(:, :, :, trId)   = curr_P(cstart:cstop, :, :);
+            end
+            
+            %% ERD/ERS
+            % Average and replicate the value of the baseline
+            curr_Baseline = repmat(mean(curr_FixData), [size(curr_TrialData, 1) 1 1 1]);
+            curr_ERD = log(curr_TrialData./ curr_Baseline);
+            
+
         end
         
         %% Sessions detector by path
@@ -112,6 +216,10 @@ classdef DataLoader
             obj.sessionsData{n}.POS = [];
             obj.sessionsData{n}.Rk  = [];
             obj.sessionsData{n}.Mk  = [];
+            obj.sessionsData{n}.P     = [];
+            obj.sessionsData{n}.freqs = [];
+            obj.sessionsData{n}.ERD = [];
+            
             obj.allRuns{n}          = 0;
             
             %offline session data merged
@@ -121,6 +229,10 @@ classdef DataLoader
             obj.sessionsDataOffline{n}.POS = [];
             obj.sessionsDataOffline{n}.Rk  = [];
             obj.sessionsDataOffline{n}.Mk  = [];
+            obj.sessionsDataOffline{n}.P     = [];
+            obj.sessionsDataOffline{n}.freqs = [];
+            obj.sessionsDataOffline{n}.ERD = [];
+            
             obj.offlineRuns{n}             = 0;
             
             %online data merged
@@ -130,11 +242,17 @@ classdef DataLoader
             obj.sessionsDataOnline{n}.POS = [];
             obj.sessionsDataOnline{n}.Rk  = [];
             obj.sessionsDataOnline{n}.Mk  = [];
+            obj.sessionsDataOnline{n}.P     = [];
+            obj.sessionsDataOnline{n}.freqs = [];
+            obj.sessionsDataOnline{n}.ERD = [];
             obj.onlineRuns{n}             = 0;
              
             for fId=1:nfiles
                 % Loading SGD file
                 [curr_s, curr_h] = sload(obj.sessionsData{n}.filenames{fId});
+                
+                % Do preprocessing on single file
+                [curr_P,curr_freqs,curr_ERD,curr_TYP,curr_DUR,curr_POS] = obj.preprocessing(curr_s,curr_h);
                 
                 cRk = fId*ones(size(curr_s,1),1);
                 
@@ -142,32 +260,44 @@ classdef DataLoader
                 if( contains(obj.sessionsData{n}.filenames{fId},'offline') == true)
                     
                     % Offline session
+                    obj.offlineRuns{n} = obj.offlineRuns{n} + 1;
                     cMk = obj.modalityId(1)*ones(size(curr_s,1),1);
                     
-                    obj.sessionsDataOffline{n}.TYP = cat(1,obj.sessionsDataOffline{n}.TYP,curr_h.EVENT.TYP);
-                    obj.sessionsDataOffline{n}.DUR = cat(1,obj.sessionsDataOffline{n}.DUR,curr_h.EVENT.DUR);
-                    obj.sessionsDataOffline{n}.POS = cat(1,obj.sessionsDataOffline{n}.POS,curr_h.EVENT.POS + size(obj.sessionsDataOffline{n}.s,1));
+                    obj.sessionsDataOffline{n}.TYP = cat(1,obj.sessionsDataOffline{n}.TYP,curr_TYP);
+                    obj.sessionsDataOffline{n}.DUR = cat(1,obj.sessionsDataOffline{n}.DUR,curr_DUR);
+                    obj.sessionsDataOffline{n}.POS = cat(1,obj.sessionsDataOffline{n}.POS,curr_POS + size(obj.sessionsDataOffline{n}.P,1));
                     obj.sessionsDataOffline{n}.Rk  = cat(1,obj.sessionsDataOffline{n}.Rk,cRk);                  
                     obj.sessionsDataOffline{n}.Mk  = cat(1,obj.sessionsDataOffline{n}.Mk,cMk);
                     obj.sessionsDataOffline{n}.s   = cat(1,obj.sessionsDataOffline{n}.s,curr_s);
+                    
+                    obj.sessionsDataOffline{n}.P     = cat(1,obj.sessionsDataOffline{n}.P,curr_P);
+                    obj.sessionsDataOffline{n}.freqs = cat(1,obj.sessionsDataOffline{n}.freqs,curr_freqs);
+                    obj.sessionsDataOffline{n}.ERD{obj.offlineRuns{n}} = curr_ERD;
+                    
                     obj.sessionsDataOffline{n}.SampleRate = curr_h.SampleRate;
-                    obj.offlineRuns{n} = obj.offlineRuns{n} + 1;
+                    
                     
                     
                 
                 elseif( contains(obj.sessionsData{n}.filenames{fId},'online') == true)
                     
                     % Online session
+                    obj.onlineRuns{n} = obj.onlineRuns{n} + 1;
                     cMk = obj.modalityId(2)*ones(size(curr_s,1),1);
                     
-                    obj.sessionsDataOnline{n}.TYP = cat(1,obj.sessionsDataOnline{n}.TYP,curr_h.EVENT.TYP);
-                    obj.sessionsDataOnline{n}.DUR = cat(1,obj.sessionsDataOnline{n}.DUR,curr_h.EVENT.DUR);
-                    obj.sessionsDataOnline{n}.POS = cat(1,obj.sessionsDataOnline{n}.POS,curr_h.EVENT.POS + size(obj.sessionsDataOnline{n}.s,1));
+                    obj.sessionsDataOnline{n}.TYP = cat(1,obj.sessionsDataOnline{n}.TYP,curr_TYP);
+                    obj.sessionsDataOnline{n}.DUR = cat(1,obj.sessionsDataOnline{n}.DUR,curr_DUR);
+                    obj.sessionsDataOnline{n}.POS = cat(1,obj.sessionsDataOnline{n}.POS,curr_POS + size(obj.sessionsDataOnline{n}.P,1));
                     obj.sessionsDataOnline{n}.Rk = cat(1,obj.sessionsDataOnline{n}.Rk,cRk);
                     obj.sessionsDataOnline{n}.Mk = cat(1,obj.sessionsDataOnline{n}.Mk,cMk);
                     obj.sessionsDataOnline{n}.s = cat(1,obj.sessionsDataOnline{n}.s,curr_s);
+                    
+                    obj.sessionsDataOnline{n}.P     = cat(1,obj.sessionsDataOnline{n}.P,curr_P);
+                    obj.sessionsDataOnline{n}.freqs = cat(1,obj.sessionsDataOnline{n}.freqs,curr_freqs);
+                    obj.sessionsDataOnline{n}.ERD{obj.onlineRuns{n}} = curr_ERD;
+                    
                     obj.sessionsDataOnline{n}.SampleRate = curr_h.SampleRate;
-                    obj.onlineRuns{n} = obj.onlineRuns{n} + 1;
+                    
                     
                         
                 else
@@ -176,15 +306,21 @@ classdef DataLoader
                 
                 end % online - offline split
                 
+                obj.allRuns{n} = obj.allRuns{n} + 1;
                 % Chain operation for both type of sessions 
-                obj.sessionsData{n}.TYP = cat(1,obj.sessionsData{n}.TYP,curr_h.EVENT.TYP);
-                obj.sessionsData{n}.DUR = cat(1,obj.sessionsData{n}.DUR,curr_h.EVENT.DUR);
-                obj.sessionsData{n}.POS = cat(1,obj.sessionsData{n}.POS,curr_h.EVENT.POS + size(obj.sessionsData{n}.s,1));              
+                obj.sessionsData{n}.TYP = cat(1,obj.sessionsData{n}.TYP,curr_TYP);
+                obj.sessionsData{n}.DUR = cat(1,obj.sessionsData{n}.DUR,curr_DUR);
+                obj.sessionsData{n}.POS = cat(1,obj.sessionsData{n}.POS,curr_POS + size(obj.sessionsData{n}.P,1));              
                 obj.sessionsData{n}.Rk  = cat(1,obj.sessionsData{n}.Rk,cRk);                            
                 obj.sessionsData{n}.s   = cat(1,obj.sessionsData{n}.s,curr_s);
+                obj.sessionsData{n}.Mk    = cat(1,obj.sessionsData{n}.Mk,cMk);
+                
+                obj.sessionsData{n}.P     = cat(1,obj.sessionsData{n}.P,curr_P);
+                obj.sessionsData{n}.freqs = cat(1,obj.sessionsData{n}.freqs,curr_freqs);
+                obj.sessionsData{n}.ERD{obj.allRuns{n}} = curr_ERD; 
                 obj.sessionsData{n}.SampleRate = curr_h.SampleRate;
-                obj.allRuns{n} = obj.allRuns{n} + 1;
-                obj.sessionsData{n}.Mk  = cat(1,obj.sessionsData{n}.Mk,cMk);
+                
+                
                 
             end % session files iteration
             
