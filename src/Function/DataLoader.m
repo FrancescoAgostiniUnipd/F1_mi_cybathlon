@@ -79,7 +79,25 @@ classdef DataLoader
             
             sprintf("\nAll %d sessions loaded correctly!\n\n",length(obj.sessionsNames));
         end
+
+        %% Load only folder number {selectedFolderArray}
+
+        % for use comment loadSessions() in the constructor DataLoader()
         
+        %     obj: is costructor object
+        %     folder: is a array of select folder
+        function obj = DataLoaderfolder( obj, folder)
+            obj = DataLoader();
+            
+            obj.loadBiosig();
+
+            for i = folder
+                fprintf("Loading session #%d %s \n",i,obj.sessionsPaths{i});
+                obj = obj.loadSession(obj.sessionsPaths{i},i);
+            end
+            fprintf("\nAll %d sessions loaded correctly!\n\n",length(obj.sessionsData));
+        end
+
         function [curr_P,curr_freqs,curr_ERD,curr_TYP,curr_DUR,curr_POS] = preprocessing(obj,curr_s,curr_h)
             curr_SampleRate = curr_h.SampleRate;
             s = curr_s(:, 1:16);
