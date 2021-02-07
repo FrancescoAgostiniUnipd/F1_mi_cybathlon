@@ -46,8 +46,8 @@ classdef DataLoader
         %% Constructor
         function obj = DataLoader()
             % Setting up env
-            obj.datapath            = '../data/';
-            %obj.datapath            = '../datalectures/';
+            % obj.datapath            = '../data/';
+            obj.datapath            = '../datalectures/';
             obj.datasample          = 512;
             obj.channelLb           = {'Fz','FC3','FC1','FCz','FC2','FC4','C3','C1','Cz','C2','C4','CP3','CP1','CPz','CP2','CP4'};
             obj.channelId           = 1:length(obj.channelLb);
@@ -98,8 +98,9 @@ classdef DataLoader
             end
             fprintf("\nAll %d sessions loaded correctly!\n\n",length(obj.sessionsData));
         end
-
-        function [curr_P,curr_freqs,curr_ERD,curr_TYP,curr_DUR,curr_POS] = preprocessing(obj,curr_s,curr_h)
+        
+        
+        function [curr_P,curr_freqs,curr_TYP,curr_DUR,curr_POS] = preprocessing(obj,curr_s,curr_h)
             curr_SampleRate = curr_h.SampleRate;
             s = curr_s(:, 1:16);
 
@@ -119,6 +120,31 @@ classdef DataLoader
             curr_POS = proc_pos2win(curr_h.EVENT.POS, obj.wshift*curr_h.SampleRate, obj.winconv, obj.mlength*curr_h.SampleRate);
             curr_DUR = floor(curr_h.EVENT.DUR/(obj.wshift*curr_h.SampleRate)) + 1;
             events.conversion = obj.winconv;
+        end
+        
+        function [curr_P,curr_freqs,curr_ERD,curr_TYP,curr_DUR,curr_POS] = ERDS(obj,curr_s,curr_h)
+%             curr_SampleRate = curr_h.SampleRate;
+%             s = curr_s(:, 1:16);
+% 
+%             % Applying CAR and Laplacian
+%             load('./Util/laplacian16.mat');
+%             curr_s_lap = s*lap;
+%             
+%             % Computing spectrogram            
+%             [curr_P, curr_freqgrid] = proc_spectrogram(curr_s_lap, obj.wlength, obj.wshift, obj.pshift, curr_SampleRate, obj.mlength);
+%             
+%             %% Selecting desired frequencies
+%             [curr_freqs, curr_idfreqs] = intersect(curr_freqgrid, obj.selfreqs);
+%             curr_P = curr_P(:, curr_idfreqs, :);
+%             
+%             %% Extracting events
+%             curr_TYP = curr_h.EVENT.TYP;
+%             curr_POS = proc_pos2win(curr_h.EVENT.POS, obj.wshift*curr_h.SampleRate, obj.winconv, obj.mlength*curr_h.SampleRate);
+%             curr_DUR = floor(curr_h.EVENT.DUR/(obj.wshift*curr_h.SampleRate)) + 1;
+%             events.conversion = obj.winconv;
+
+
+            [curr_P,curr_freqs,curr_TYP,curr_DUR,curr_POS] = preprocessing(obj,curr_s,curr_h);
             
             %% Data information
             curr_NWindows  = size(curr_P, 1);
@@ -277,14 +303,19 @@ classdef DataLoader
                 [curr_s, curr_h] = sload(obj.sessionsData{n}.filenames{fId});
                 
                 % Do preprocessing on single file
-                [curr_P,curr_freqs,curr_ERD,curr_TYP,curr_DUR,curr_POS] = obj.preprocessing(curr_s,curr_h);
+                %[curr_P,curr_freqs,curr_TYP,curr_DUR,curr_POS] = obj.preprocessing(curr_s,curr_h);
                 
                 
                 cRk = fId*ones(size(curr_s,1),1);
-                cRkP = fId*ones(size(curr_P,1),1);
+               
                 
                 % Chain operation for Offline and Online sets
                 if( contains(obj.sessionsData{n}.filenames{fId},'offline') == true)
+                    
+                    % Do preprocessing on single file
+                    [curr_P,curr_freqs,curr_ERD,curr_TYP,curr_DUR,curr_POS] = obj.ERDS(curr_s,curr_h);
+                
+                    cRkP = fId*ones(size(curr_P,1),1);
                     
                     % Offline session
                     obj.offlineRuns{n} = obj.offlineRuns{n} + 1;
@@ -308,10 +339,18 @@ classdef DataLoader
                     
                     obj.sessionsDataOffline{n}.SampleRate = curr_h.SampleRate;
                     
-                    
+                    obj.allRuns{n} = obj.allRuns{n} + 1;
+                    obj.sessionsData{n}.ERD{obj.allRuns{n}} = curr_ERD; 
                     
                 
                 elseif( contains(obj.sessionsData{n}.filenames{fId},'online') == true)
+                    
+                    obj.allRuns{n} = obj.allRuns{n} + 1;
+                    
+                    % Do preprocessing on single file
+                    [curr_P,curr_freqs,curr_TYP,curr_DUR,curr_POS] = obj.preprocessing(curr_s,curr_h);
+                
+                    cRkP = fId*ones(size(curr_P,1),1);
                     
                     % Online session
                     obj.onlineRuns{n} = obj.onlineRuns{n} + 1;
@@ -329,7 +368,7 @@ classdef DataLoader
                     
                     obj.sessionsDataOnline{n}.P     = cat(1,obj.sessionsDataOnline{n}.P,curr_P);
                     obj.sessionsDataOnline{n}.freqs = cat(1,obj.sessionsDataOnline{n}.freqs,curr_freqs);
-                    obj.sessionsDataOnline{n}.ERD{obj.onlineRuns{n}} = curr_ERD;
+                    %obj.sessionsDataOnline{n}.ERD{obj.onlineRuns{n}} = curr_ERD;
                     
                     obj.sessionsDataOnline{n}.SampleRate = curr_h.SampleRate;
                     
@@ -341,7 +380,7 @@ classdef DataLoader
                 
                 end % online - offline split
                 
-                obj.allRuns{n} = obj.allRuns{n} + 1;
+                %obj.allRuns{n} = obj.allRuns{n} + 1;
                 % Chain operation for both type of sessions 
                 obj.sessionsData{n}.TYP = cat(1,obj.sessionsData{n}.TYP,curr_TYP);
                 obj.sessionsData{n}.DUR = cat(1,obj.sessionsData{n}.DUR,curr_DUR);
@@ -354,7 +393,7 @@ classdef DataLoader
                 
                 obj.sessionsData{n}.P     = cat(1,obj.sessionsData{n}.P,curr_P);
                 obj.sessionsData{n}.freqs = cat(1,obj.sessionsData{n}.freqs,curr_freqs);
-                obj.sessionsData{n}.ERD{obj.allRuns{n}} = curr_ERD; 
+                %obj.sessionsData{n}.ERD{obj.allRuns{n}} = curr_ERD; 
                 obj.sessionsData{n}.SampleRate = curr_h.SampleRate;
                 
                 

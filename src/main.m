@@ -24,11 +24,11 @@ offlineRuns1    = data.offlineRuns{1};                    % offline runs in sess
 onlineRuns1     = data.onlineRuns{1};                     % online runs in session 1
 
 
-sessionOffline1 = data.getSessionOfflineById(9);
+%sessionOffline1 = data.getSessionOfflineById(9);
 
-session2        = data.getSessionByName("20190711_F1");         % Load data of session 20190711_F1
-sessionOnline2  = data.getSessionOnlineByName("20190711_F1");   % Load data of session 20190711_F1
-sessionOffline2 = data.getSessionOfflineByName("20190711_F1");  % Load data of session 20190711_F1
+%session2        = data.getSessionByName("20190711_F1");         % Load data of session 20190711_F1
+%sessionOnline2  = data.getSessionOnlineByName("20190711_F1");   % Load data of session 20190711_F1
+%sessionOffline2 = data.getSessionOfflineByName("20190711_F1");  % Load data of session 20190711_F1
 
 
 
@@ -263,20 +263,29 @@ handles = nan(NumRuns, 1);
 fig1 = figure;
 SelChans={};
 SelFreqs=[];
+FisherScoretemp=FisherScore;
 for rId = 1:length(OfflineRuns)
     subplot(1, length(OfflineRuns), rId);
     imagesc(FisherScore(:, :, OfflineRuns(rId))');
     
     % To select the freq and chan with the highest fisher score
-    A=FisherScore(:,:,OfflineRuns(rId));
-    [val,idx] = max(A(:));
-    [row,col] = ind2sub(size(A),idx);
-    SelChans=cat(2,SelChans,data.channelLb(col));
-    SelFreqs=cat(2,SelFreqs,sessionOffline1.freqs(row));
+    A=FisherScoretemp(:,:,OfflineRuns(rId));
+    val = 10;
+    while(val>0.9)
+        
+        [val,idx] = max(A(:));
+        if val>0.9
+            [row,col] = ind2sub(size(A),idx);
+            A(row,col)=0;
+            FisherScoretemp(row,col,:)=0;
+            SelChans=cat(2,SelChans,data.channelLb(col));
+            SelFreqs=cat(2,SelFreqs,freqs(row));
+        end
+    end
     
     axis square;
     set(gca, 'XTick', 1:NumFreqs);
-    set(gca, 'XTickLabel', sessionOffline1.freqs);
+    set(gca, 'XTickLabel', freqs);
     set(gca, 'YTick', 1:NumChans);
     set(gca, 'YTickLabel', data.channelLb);
     xtickangle(-90);
@@ -301,7 +310,7 @@ disp('[proc] |- Select features');
 NumSelFeatures = length(SelChans);
 
 [~, SelChansId] = ismember(SelChans, data.channelLb);
-[~, SelFreqsId] = ismember(SelFreqs, sessionOffline1.freqs);
+[~, SelFreqsId] = ismember(SelFreqs, freqs);
 
 F = nan(NumWins, NumSelFeatures);
 for ftId = 1:NumSelFeatures
@@ -362,4 +371,195 @@ h2.LineWidth = 2;
 h2.DisplayName = 'Boundary between boht hands & both feet';
 legend('both feet', 'both hands', 'Boundary');
 hold off;
+
+
+
+
+
+%%%%%%
+%% from ex6_control_framework_intergartion.m
+
+%% Apply log to the data
+
+SelFreqs = 4:2:48;
+sessionOnline = data.getSessionOnlineById(1);   
+fullfreqs = sessionOnline.freqs;
+[freqs, idfreqs] = intersect(fullfreqs, SelFreqs);
+
+U = log(sessionOnline.P(:, idfreqs, :));
+
+NumWins  = size(U, 1);
+NumFreqs = size(U, 2);
+NumChans = size(U, 3);
+
+Runs = unique(sessionOnline.RkP);
+NumRuns = length(Runs);
+
+TYP= sessionOnline.TYP;
+POS=sessionOnline.POS;
+DUR=sessionOnline.DUR;
+
+%% Labeling the data
+disp('[proc] + Labeling the data');
+
+CFeedbackPOS = POS(TYP == 781);
+CFeedbackDUR = DUR(TYP == 781);
+
+CuePOS = POS(TYP == 771 | TYP == 773 | TYP == 783);
+CueDUR = DUR(TYP == 771 | TYP == 773 | TYP == 783);
+CueTYP = TYP(TYP == 771 | TYP == 773 | TYP == 783);
+
+NumTrials = length(CueTYP);
+
+% We consider the intersting period from Cue apperance to end of continuous feedback
+Ck = zeros(NumWins, 1);
+Tk = zeros(NumWins, 1);
+for trId = 1:NumTrials
+    cstart = CuePOS(trId);
+    cstop  = CFeedbackPOS(trId) + CFeedbackDUR(trId) - 1;
+    Ck(cstart:cstop) = CueTYP(trId);
+    
+    cstart_cfb = CFeedbackPOS(trId);
+    Tk(cstart_cfb:cstop) = trId;
+end
+
+%% Loading the classifier
+classifier_name = 'ah7_20201215_classifier.mat';
+MDL = load(classifier_name);
+SelChansId = MDL.SelChansId;
+SelFreqsId = MDL.SelFreqsId;
+Model = MDL.Model;
+
+%% Features extraction
+disp('[proc] |- Extracing features');
+
+NumSelFeatures = length(SelChansId);
+
+F = nan(NumWins, NumSelFeatures);
+for ftId = 1:NumSelFeatures
+    cfrq  = SelFreqsId(ftId);
+    cchan = SelChansId(ftId);
+    F(:, ftId) = U(:, cfrq, cchan);
+end
+
+%% Classifier Test
+disp('[proc] + Evaluate classifier');
+LabelIdx = Ck == 771 | Ck == 773;
+
+%% Overall classifier accuracy on testset
+
+[Gk, pp] = predict(Model, F);
+
+SSAcc = 100*sum(Gk(LabelIdx) == Ck(LabelIdx))./length(Gk(LabelIdx));
+Classes = classId;
+NumClasses = length(classId);
+SSClAcc = nan(NumClasses, 1);
+for cId = 1:NumClasses
+    cindex = Ck == Classes(cId);
+    SSClAcc(cId) = 100*sum(Gk(cindex) == Ck(cindex))./length(Gk(cindex));
+end
+
+%% Evidence accumulation
+disp('[proc] + Evidence accumulation (exponential smoothing)');
+TrialStart = POS(TYP == 781);
+NumSamples = size(pp, 1);
+
+ipp = 0.5*ones(size(pp, 1), 1);
+alpha = 0.97;
+
+for sId = 2:NumSamples
+    
+    curr_pp  = pp(sId, 1);
+    prev_ipp = ipp(sId-1);
+    
+    if ismember(sId, TrialStart)
+        ipp(sId) = 1./NumClasses;
+    else
+        ipp(sId) = prev_ipp.*alpha + curr_pp.*(1-alpha);
+    end
+end
+
+
+%% Plot accumulated evidence and raw probabilities
+fig1 = figure;
+
+CueClasses    = [771 783 773];
+LbClasses     = {'both feet', 'rest', 'both hands'};
+ValueClasses  = [1 0.5 0];
+Threshold     = 0.7;
+
+SelTrial = 50;
+
+% Trial 15: good rest
+% Trial 80: bad rest
+% Trial 55: good both hands
+% Trial 58: good both feet
+
+cindex = Tk == SelTrial;
+[~, ClassIdx] = ismember(unique(Ck(cindex)), CueClasses);
+
+GreyColor = [150 150 150]/255;
+LineColors = {'b', 'g', 'r'};
+
+hold on;
+% Plotting raw probabilities
+plot(pp(cindex, 1), 'o', 'Color', GreyColor);
+
+% Plotting accumulutated evidence
+plot(ipp(cindex), 'k', 'LineWidth', 2);
+
+% Plotting actual target class
+yline(ValueClasses(ClassIdx), LineColors{ClassIdx}, 'LineWidth', 5);
+
+% Plotting 0.5 line
+yline(0.5, '--k');
+
+% Plotting thresholds
+yline(Threshold, 'k', 'Th_{1}');
+yline(1-Threshold, 'k', 'Th_{2}');
+hold off;
+
+grid on;
+ylim([0 1]);
+xlim([1 sum(cindex)]);
+legend('raw prob', 'integrated prob');
+ylabel('probability/control')
+xlabel('sample');
+title(['Trial ' num2str(SelTrial) '/' num2str(NumTrials) ' - Class ' LbClasses{ClassIdx} ' (' num2str(CueClasses(ClassIdx)) ')']);
+
+
+%% Compute performances
+ActualClass = TYP(TYP == 771 | TYP == 773 | TYP == 783);
+Decision = nan(NumTrials, 1);
+
+for trId = 1:NumTrials
+    cstart = CFeedbackPOS(trId);
+    cstop  = CFeedbackPOS(trId) + CFeedbackDUR(trId) - 1;
+    cipp = ipp(cstart:cstop);
+    
+    endpoint = find( (cipp >= Threshold) | (cipp <= 1 - Threshold), 1, 'first' );
+    
+    if(isempty(endpoint))
+        Decision(trId) = 783;
+        continue;
+    end
+    
+    if(cipp(endpoint) >= Threshold)
+        Decision(trId) = 771;
+    elseif (cipp(endpoint) <= Threshold)
+        Decision(trId) = 773;
+    end
+end
+
+% Removing Rest trials
+ActiveTrials = ActualClass ~= 783;
+RestTrials = ActualClass == 783;
+
+PerfActive  = 100 * (sum(ActualClass(ActiveTrials) == Decision(ActiveTrials))./sum(ActiveTrials))
+PerfResting = 100 * (sum(ActualClass(RestTrials) == Decision(RestTrials))./sum(RestTrials))
+
+RejTrials = Decision == 783;
+
+PerfActive_rej = 100 * (sum(ActualClass(ActiveTrials & ~RejTrials) == Decision(ActiveTrials & ~RejTrials))./sum(ActiveTrials & ~RejTrials))
+
 
