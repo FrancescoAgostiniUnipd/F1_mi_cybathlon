@@ -8,6 +8,7 @@ addpath('./Util/');
 data = DataLoader;
 
 
+
 %% Example how to get sessions data and names from loader
 
 sessionsNames = data.getSessionsNames();  % Load Sessions names
@@ -23,6 +24,7 @@ offlineRuns1    = data.offlineRuns{1};                    % offline runs in sess
 onlineRuns1     = data.onlineRuns{1};                     % online runs in session 1
 
 
+sessionOffline1 = data.getSessionOfflineById(9);
 
 session2        = data.getSessionByName("20190711_F1");         % Load data of session 20190711_F1
 sessionOnline2  = data.getSessionOnlineByName("20190711_F1");   % Load data of session 20190711_F1
@@ -170,7 +172,7 @@ for cId = 1:data.nclasses
     for chId = 1:length(ChannelSelected)
         subplot(2, 3, (cId - 1)*length(ChannelSelected) + chId);
         cdata = mean(ERD(:, :, ChannelSelected(chId), tCk == data.classId(cId)), 4);
-        imagesc(t, freqs, cdata');
+        imagesc(t, session1.freqs, cdata');
         set(gca,'YDir','normal');
         climits(:, chId) = get(gca, 'CLim');
         chandles = cat(1, chandles, gca);
@@ -255,17 +257,26 @@ end
 
 %% Visualization Fisher score
 disp('[proc] |- Visualizing fisher score');
-OfflineRuns = [1 2 3];
+OfflineRuns = 1:NumRuns;
 climits = [];
 handles = nan(NumRuns, 1);
 fig1 = figure;
-
+SelChans={};
+SelFreqs=[];
 for rId = 1:length(OfflineRuns)
-    subplot(1, 3, rId);
+    subplot(1, length(OfflineRuns), rId);
     imagesc(FisherScore(:, :, OfflineRuns(rId))');
+    
+    % To select the freq and chan with the highest fisher score
+    A=FisherScore(:,:,OfflineRuns(rId));
+    [val,idx] = max(A(:));
+    [row,col] = ind2sub(size(A),idx);
+    SelChans=cat(2,SelChans,data.channelLb(col));
+    SelFreqs=cat(2,SelFreqs,sessionOffline1.freqs(row));
+    
     axis square;
     set(gca, 'XTick', 1:NumFreqs);
-    set(gca, 'XTickLabel', freqs);
+    set(gca, 'XTickLabel', sessionOffline1.freqs);
     set(gca, 'YTick', 1:NumChans);
     set(gca, 'YTickLabel', data.channelLb);
     xtickangle(-90);
@@ -282,13 +293,15 @@ set(handles, 'CLim', [min(min(climits)) max(max(climits))]);
 sgtitle('Fisher score');
 
 %% Features selection
+
 disp('[proc] |- Select features');
-SelChans = {'C4', 'C4', 'FC2'};
-SelFreqs = [20 22 22];
+%SelChans = {'C4', 'C4', 'FC2'};
+%SelFreqs = [20 22 22];
+
 NumSelFeatures = length(SelChans);
 
 [~, SelChansId] = ismember(SelChans, data.channelLb);
-[~, SelFreqsId] = ismember(SelFreqs, freqs);
+[~, SelFreqsId] = ismember(SelFreqs, sessionOffline1.freqs);
 
 F = nan(NumWins, NumSelFeatures);
 for ftId = 1:NumSelFeatures
