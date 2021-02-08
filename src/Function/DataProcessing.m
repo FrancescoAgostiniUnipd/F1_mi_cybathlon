@@ -38,19 +38,20 @@ classdef DataProcessing
         %% Sessions Iterator
         function obj = sessionsProcessing()
            for i=1:obj.nsessions
-                disp('Processing session n. ',i)
-                processSession(i)
+                disp('Processing session n. ',i);
+                obj.processSession(i);
             end 
         end
         
         %% Single session processing
         function obj = processSession(index)
             disp('Session Processing...');
+            
         end
         
         
         %% Trial Extraction
-        function obj = extractTrial(obj)
+        function obj = extractTrial(obj,index)
             
         end
         

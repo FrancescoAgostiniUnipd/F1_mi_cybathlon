@@ -5,7 +5,7 @@ addpath('./Function/');
 addpath('./Util/');
 
 % Setting up env
-datapath = "../data/";
+datapath = "../datalectures/";
 
 % Load Data
 data = DataLoader(datapath);
