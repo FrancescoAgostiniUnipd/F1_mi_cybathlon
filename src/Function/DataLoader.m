@@ -75,7 +75,7 @@ classdef DataLoader
             sprintf("\n\nStart loading sessions ... \n");
             obj = obj.listSessions();
             % Start loading gdf files
-            obj = obj.loadSessions();
+            %obj = obj.loadSessions();
             
             
             sprintf("\nAll %d sessions loaded correctly!\n\n",length(obj.sessionsNames));
