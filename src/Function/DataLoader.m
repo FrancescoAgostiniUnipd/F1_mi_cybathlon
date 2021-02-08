@@ -51,9 +51,9 @@ classdef DataLoader
     %% Class constructor and loader method
     methods
         %% Constructor
-        function obj = DataLoader(path)
+        function obj = DataLoader()
             % Setting up env
-            obj.datapath            = path;
+            obj.datapath            = '../data/';
             obj.datasample          = 512;
             obj.channelLb           = {'Fz','FC3','FC1','FCz','FC2','FC4','C3','C1','Cz','C2','C4','CP3','CP1','CPz','CP2','CP4'};
             obj.channelId           = 1:length(obj.channelLb);
@@ -255,12 +255,10 @@ classdef DataLoader
                     
                     obj.sessionsDataOffline{n}.P     = cat(1,obj.sessionsDataOffline{n}.P,curr_P);
                     obj.sessionsDataOffline{n}.freqs = cat(1,obj.sessionsDataOffline{n}.freqs,curr_freqs);
-                    obj.sessionsDataOffline{n}.ERD{obj.offlineRuns{n}} = curr_ERD;
                     
                     obj.sessionsDataOffline{n}.SampleRate = curr_h.SampleRate;
                     
                     obj.allRuns{n} = obj.allRuns{n} + 1;
-                    obj.sessionsData{n}.ERD{obj.allRuns{n}} = curr_ERD; 
                     
                 
                 elseif( contains(obj.sessionsData{n}.filenames{fId},'online') == true)
