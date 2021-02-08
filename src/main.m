@@ -4,16 +4,24 @@ clear all; close all; clc;
 addpath('./Function/');
 addpath('./Util/');
 
+% Setting up env
+datapath = "../data/";
+
 % Load Data
-data = DataLoader;
+data = DataLoader(datapath);
+
+% Process Data
+processor = DataProcessing(data);
 
 
-
+%{
 %% Example how to get sessions data and names from loader
 
 sessionsNames = data.getSessionsNames();  % Load Sessions names
 sessionsPath  = data.getSessionsPaths();  % Load Sessions Path
 sessionsData  = data.getSessionsData();   % Load Sessions Data
+
+
 
 % Session 1 example
 session1        = data.getSessionById(1);                 % Load all data of session #1
@@ -57,13 +65,7 @@ plot(session1.Mk);            % Plot session Mk
 title('session Mk')
 
 
-%% ????????? Data analize ??????  from ex3_spectogram_students.com
-mlength    = 1; % ??
-wlength    = 0.5; % ??
-pshift     = 0.25;  % ??              
-wshift     = 0.0625; % ??
-winconv = 'backward'; % ??
-selfreqs   = 4:2:96; % ??
+
 
 %% Spatial filters
 disp('[proc] |- Applying CAR and Laplacian');
@@ -562,4 +564,4 @@ RejTrials = Decision == 783;
 
 PerfActive_rej = 100 * (sum(ActualClass(ActiveTrials & ~RejTrials) == Decision(ActiveTrials & ~RejTrials))./sum(ActiveTrials & ~RejTrials))
 
-
+%}

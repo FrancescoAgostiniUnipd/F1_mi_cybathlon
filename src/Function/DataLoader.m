@@ -14,6 +14,8 @@ Version: 0.4
 classdef DataLoader
     %% Class Properties 
     properties
+        
+        %% Sessions info
         datapath               % Path where data are stored
         datasample             % Sample frequency
         channelLb              % Label fot EEG channels
@@ -25,12 +27,17 @@ classdef DataLoader
         nclasses               % N of classes
         modalityId             % ID of modality
         modalityLb             % Label of modality (online ~ offline)
-        mlength
-        wlength 
-        pshift                    
-        wshift    
-        selfreqs
-        winconv 
+        
+        %% Spectrogram parameters
+        mlength                % M lenght of spectrogram
+        wlength                % Windows length of spectrogram
+        pshift                 % P shift of spectrogram
+        wshift                 % Window shift of spectrogram
+        selfreqs               % Selected freqs of spectrogram
+        winconv                % winconv of spectrogram
+        
+        %% Final data
+        nsessions              % Number of sessionis
         sessionsNames          % Sessions names present in data directory
         sessionsPaths          % sessions path correspondent to sessions names
         sessionsData           % sessions data correspondent to sessions names
@@ -44,10 +51,9 @@ classdef DataLoader
     %% Class constructor and loader method
     methods
         %% Constructor
-        function obj = DataLoader()
+        function obj = DataLoader(datapath)
             % Setting up env
-            % obj.datapath            = '../data/';
-            obj.datapath            = '../datalectures/';
+            obj.datapath            = datapath;
             obj.datasample          = 512;
             obj.channelLb           = {'Fz','FC3','FC1','FCz','FC2','FC4','C3','C1','Cz','C2','C4','CP3','CP1','CPz','CP2','CP4'};
             obj.channelId           = 1:length(obj.channelLb);
@@ -58,12 +64,17 @@ classdef DataLoader
             obj.nclasses            = length(obj.classId);
             obj.modalityId          = [0 1];
             obj.modalityLb          = {'offline','online'};
+            
+            % Spectrogram params
             obj.mlength             = 1;
             obj.wlength             = 0.5;
             obj.pshift              = 0.25;                  
             obj.wshift              = 0.0625;  
             obj.selfreqs            = 4:2:48;
-            obj.winconv             = 'backward'; 
+            obj.winconv             = 'backward';
+            
+            % Only initialize as empty array
+            obj.nsessions           = 0;
             obj.sessionsData        = [];
             obj.sessionsDataOffline = [];
             obj.sessionsDataOnline  = [];
@@ -119,109 +130,20 @@ classdef DataLoader
             curr_TYP = curr_h.EVENT.TYP;
             curr_POS = proc_pos2win(curr_h.EVENT.POS, obj.wshift*curr_h.SampleRate, obj.winconv, obj.mlength*curr_h.SampleRate);
             curr_DUR = floor(curr_h.EVENT.DUR/(obj.wshift*curr_h.SampleRate)) + 1;
-            events.conversion = obj.winconv;
+
         end
         
-        function [curr_P,curr_freqs,curr_ERD,curr_TYP,curr_DUR,curr_POS] = ERDS(obj,curr_s,curr_h)
-%             curr_SampleRate = curr_h.SampleRate;
-%             s = curr_s(:, 1:16);
-% 
-%             % Applying CAR and Laplacian
-%             load('./Util/laplacian16.mat');
-%             curr_s_lap = s*lap;
-%             
-%             % Computing spectrogram            
-%             [curr_P, curr_freqgrid] = proc_spectrogram(curr_s_lap, obj.wlength, obj.wshift, obj.pshift, curr_SampleRate, obj.mlength);
-%             
-%             %% Selecting desired frequencies
-%             [curr_freqs, curr_idfreqs] = intersect(curr_freqgrid, obj.selfreqs);
-%             curr_P = curr_P(:, curr_idfreqs, :);
-%             
-%             %% Extracting events
-%             curr_TYP = curr_h.EVENT.TYP;
-%             curr_POS = proc_pos2win(curr_h.EVENT.POS, obj.wshift*curr_h.SampleRate, obj.winconv, obj.mlength*curr_h.SampleRate);
-%             curr_DUR = floor(curr_h.EVENT.DUR/(obj.wshift*curr_h.SampleRate)) + 1;
-%             events.conversion = obj.winconv;
 
-
-            [curr_P,curr_freqs,curr_TYP,curr_DUR,curr_POS] = preprocessing(obj,curr_s,curr_h);
-            
-            %% Data information
-            curr_NWindows  = size(curr_P, 1);
-            curr_NFreqs    = size(curr_P, 2);
-            curr_NChannels = size(curr_P, 3);
-            
-            
-            %% Creating vector labels
-            curr_CFeedbackPOS = curr_POS(curr_TYP == 781); % continuos feedback
-            curr_CFeedbackDUR = curr_DUR(curr_TYP == 781); % continuos feedback
-
-            curr_CuePOS = curr_POS(curr_TYP == 771 | curr_TYP == 773); % both hands | both feet
-            curr_CueDUR = curr_DUR(curr_TYP == 771 | curr_TYP == 773); % both hands | both feet
-            curr_CueTYP = curr_TYP(curr_TYP == 771 | curr_TYP == 773); % both hands | both feet
-
-            curr_FixPOS = curr_POS(curr_TYP == 786); % Fixation cross
-            curr_FixDUR = curr_DUR(curr_TYP == 786); % Fixation cross
-            curr_FixTYP = curr_TYP(curr_TYP == 786); % fixation cross
-            
-            curr_NumTrials = length(curr_CFeedbackPOS);
-            
-            % We consider the intersting period from Cue apperance to end of continuous feedback
-            curr_Ck = zeros(curr_NWindows, 1);
-            curr_Tk = zeros(curr_NWindows, 1);
-            curr_TrialStart = nan(curr_NumTrials, 1);
-            curr_TrialStop  = nan(curr_NumTrials, 1);
-            curr_FixStart = nan(curr_NumTrials, 1);
-            curr_FixStop  = nan(curr_NumTrials, 1);
-            for trId = 1:curr_NumTrials
-                cstart = curr_CuePOS(trId);
-                cstop  = curr_CFeedbackPOS(trId) + curr_CFeedbackDUR(trId) - 1;
-                curr_Ck(cstart:cstop) = curr_CueTYP(trId);
-                curr_Tk(cstart:cstop) = trId;
-
-                curr_TrialStart(trId) = cstart;
-                curr_TrialStop(trId)  = cstop;
-                curr_FixStart(trId)   = curr_FixPOS(trId);
-                curr_FixStop(trId)    = curr_FixPOS(trId) + curr_FixDUR(trId) - 1;
-            end
-            
-            %% Trial extraction
-
-            % Extracting data for each trial (be careful that length might be different for few sample)
-            curr_MinTrialDur = min(curr_TrialStop - curr_TrialStart);
-            curr_TrialData   = nan(curr_MinTrialDur, curr_NFreqs, curr_NChannels, curr_NumTrials);
-            curr_tCk = zeros(curr_NumTrials, 1);
-            for trId = 1:curr_NumTrials
-                cstart = curr_TrialStart(trId);
-                cstop  = cstart + curr_MinTrialDur - 1;
-                curr_TrialData(:, :, :, trId)   = curr_P(cstart:cstop, :, :);
-                curr_tCk(trId) = unique(curr_Ck(cstart:cstop));
-            end
-            
-            %% Baseline extraction (from fixation)
-            curr_MinFixDur = min(curr_FixStop - curr_FixStart);
-            curr_FixData   = nan(curr_MinFixDur, curr_NFreqs, curr_NChannels, curr_NumTrials);
-
-            for trId = 1:curr_NumTrials
-                cstart = curr_FixStart(trId);
-                cstop  = cstart + curr_MinFixDur - 1;
-                curr_FixData(:, :, :, trId)   = curr_P(cstart:cstop, :, :);
-            end
-            
-            %% ERD/ERS
-            % Average and replicate the value of the baseline
-            curr_Baseline = repmat(mean(curr_FixData), [size(curr_TrialData, 1) 1 1 1]);
-            curr_ERD = log(curr_TrialData./ curr_Baseline);
-            
-
-        end
         
         %% Sessions detector by path
         function obj = listSessions(obj)
             sessions = dir(obj.datapath);
             dfolders = sessions([sessions(:).isdir]);
             dfolders = dfolders(~ismember({dfolders(:).name},{'.','..'}));
-            for i = 1 : length(dfolders)
+            
+            obj.nsessions = length(dfolders);
+            
+            for i = 1 : obj.nsessions
               obj.sessionsNames{i} = dfolders(i).name;
               obj.sessionsPaths{i} = fullfile(obj.datapath,obj.sessionsNames{i});
             end
@@ -300,10 +222,11 @@ classdef DataLoader
              
             for fId=1:nfiles
                 % Loading SGD file
+                disp(obj.sessionsData{n}.filenames{fId})
                 [curr_s, curr_h] = sload(obj.sessionsData{n}.filenames{fId});
                 
                 % Do preprocessing on single file
-                %[curr_P,curr_freqs,curr_TYP,curr_DUR,curr_POS] = obj.preprocessing(curr_s,curr_h);
+                [curr_P,curr_freqs,curr_TYP,curr_DUR,curr_POS] = obj.preprocessing(curr_s,curr_h);
                 
                 
                 cRk = fId*ones(size(curr_s,1),1);
@@ -312,9 +235,6 @@ classdef DataLoader
                 % Chain operation for Offline and Online sets
                 if( contains(obj.sessionsData{n}.filenames{fId},'offline') == true)
                     
-                    % Do preprocessing on single file
-                    [curr_P,curr_freqs,curr_ERD,curr_TYP,curr_DUR,curr_POS] = obj.ERDS(curr_s,curr_h);
-                
                     cRkP = fId*ones(size(curr_P,1),1);
                     
                     % Offline session
@@ -368,7 +288,6 @@ classdef DataLoader
                     
                     obj.sessionsDataOnline{n}.P     = cat(1,obj.sessionsDataOnline{n}.P,curr_P);
                     obj.sessionsDataOnline{n}.freqs = cat(1,obj.sessionsDataOnline{n}.freqs,curr_freqs);
-                    %obj.sessionsDataOnline{n}.ERD{obj.onlineRuns{n}} = curr_ERD;
                     
                     obj.sessionsDataOnline{n}.SampleRate = curr_h.SampleRate;
                     
@@ -393,7 +312,7 @@ classdef DataLoader
                 
                 obj.sessionsData{n}.P     = cat(1,obj.sessionsData{n}.P,curr_P);
                 obj.sessionsData{n}.freqs = cat(1,obj.sessionsData{n}.freqs,curr_freqs);
-                %obj.sessionsData{n}.ERD{obj.allRuns{n}} = curr_ERD; 
+
                 obj.sessionsData{n}.SampleRate = curr_h.SampleRate;
                 
                 
@@ -401,6 +320,11 @@ classdef DataLoader
             end % session files iteration
             
         end % load session function
+        
+        %% Getter for sessions number
+        function sessionsNumber = getSessionsNumber(obj)
+            sessionsNumber = obj.nsessions;
+        end
         
         
         %% Getter for sessions names
