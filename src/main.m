@@ -12,6 +12,7 @@ data = DataLoader(datapath);
 
 % Process Data
 processor = DataProcessing(data);
+processor.sessionsProcessing();
 
 
 %{
