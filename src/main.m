@@ -38,7 +38,7 @@ disp(session1.SampleRate)     % Display Sample rate
 figure;
 subplot(3,2,1);
 s1 = session1.s(:,1:16); % because the column 17 is empty
-plot(sessionOffline1.P);   % Plot samples
+plot(s1);   % Plot samples
 title('samples')
 subplot(3,2,2);
 plot(session1.TYP);           % Plot session TYP vector 
