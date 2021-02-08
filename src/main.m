@@ -1,11 +1,11 @@
 %% MAIN SCRIPT
-clear all; close all; clc;
-% Adding functions class
-addpath('./Function/');
-addpath('./Util/');
-
-% Load Dataf
-data = DataLoader;
+% clear all; close all; clc;
+% % Adding functions class
+% addpath('./Function/');
+% addpath('./Util/');
+% 
+% % Load Dataf
+% data = DataLoader;
 
 
 
@@ -16,7 +16,7 @@ sessionsPath  = data.getSessionsPaths();  % Load Sessions Path
 sessionsData  = data.getSessionsData();   % Load Sessions Data
 
 % Session i example
-i=2;
+i=11;
 session        = data.getSessionById(i);                 % Load all data of session #1
 sessionOnline  = data.getSessionOnlineById(i);           % Load all online data of session #1
 sessionOffline = data.getSessionOfflineById(i);          % Load all offline data of session #1
@@ -31,359 +31,361 @@ onlineRuns     = data.onlineRuns{i};                     % online runs in sessio
 %sessionOffline2 = data.getSessionOfflineByName("20190711_F1");  % Load data of session 20190711_F1
 
 
+if(length(sessionOffline.s)>1) 
 
-%% Example of data usage from a sessions
+    %% Example of data usage from a sessions
 
-disp(session.SampleRate)     % Display Sample rate
-figure;
-subplot(3,2,1);
-s1 = session.s(:,1:16); % because the column 17 is empty
-plot(sessionOffline.s);   % Plot samples
-title('samples')
-subplot(3,2,2);
-plot(session.TYP);           % Plot session TYP vector 
-title('session TYP')
-subplot(3,2,3);
-plot(session.DUR);           % Plot session DUR vector
-title('session DUR')
-subplot(3,2,4);
-plot(session.POS);           % Plot session POS vector 
-title('session POS')
-subplot(3,2,5);
-plot(session.Rk);            % Plot session Rk 
-title('session Rk')
-subplot(3,2,6);
-plot(session.Mk);            % Plot session Mk 
-title('session Mk')
+    disp(session.SampleRate)     % Display Sample rate
+    figure;
+    subplot(3,2,1);
+    s1 = session.s(:,1:16); % because the column 17 is empty
+    plot(sessionOffline.s);   % Plot samples
+    title('samples')
+    subplot(3,2,2);
+    plot(session.TYP);           % Plot session TYP vector 
+    title('session TYP')
+    subplot(3,2,3);
+    plot(session.DUR);           % Plot session DUR vector
+    title('session DUR')
+    subplot(3,2,4);
+    plot(session.POS);           % Plot session POS vector 
+    title('session POS')
+    subplot(3,2,5);
+    plot(session.Rk);            % Plot session Rk 
+    title('session Rk')
+    subplot(3,2,6);
+    plot(session.Mk);            % Plot session Mk 
+    title('session Mk')
 
 
-%% ????????? Data analize ??????  from ex3_spectogram_students.com
-mlength    = 1; % ??
-wlength    = 0.5; % ??
-pshift     = 0.25;  % ??              
-wshift     = 0.0625; % ??
-winconv = 'backward'; % ??
-selfreqs   = 4:2:96; % ??
+    %% ????????? Data analize ??????  from ex3_spectogram_students.com
+    mlength    = 1; % ??
+    wlength    = 0.5; % ??
+    pshift     = 0.25;  % ??              
+    wshift     = 0.0625; % ??
+    winconv = 'backward'; % ??
+    selfreqs   = 4:2:96; % ??
 
-% %% Spatial filters
-% disp('[proc] |- Applying CAR and Laplacian');
-% load('./Util/laplacian16.mat');
-% %s1 = session1.s(:,1:16); % because the column 17 is empty
-% s_lap = s1*lap;
-% 
-% 
-% %% Spectrogram (PSD)
-% disp('[proc] |- Computing spectrogram');
-% [P, freqgrid] = proc_spectrogram(s_lap, wlength, wshift, pshift, session1.SampleRate, mlength);  
-% size(P)
-% 
-% %% Selecting desired frequencies
-% [freqs, idfreqs] = intersect(freqgrid, selfreqs);
-% P = P(:, idfreqs, :);
+    % %% Spatial filters
+    % disp('[proc] |- Applying CAR and Laplacian');
+    % load('./Util/laplacian16.mat');
+    % %s1 = session1.s(:,1:16); % because the column 17 is empty
+    % s_lap = s1*lap;
+    % 
+    % 
+    % %% Spectrogram (PSD)
+    % disp('[proc] |- Computing spectrogram');
+    % [P, freqgrid] = proc_spectrogram(s_lap, wlength, wshift, pshift, session1.SampleRate, mlength);  
+    % size(P)
+    % 
+    % %% Selecting desired frequencies
+    % [freqs, idfreqs] = intersect(freqgrid, selfreqs);
+    % P = P(:, idfreqs, :);
 
-% %% Extracting events
-% disp('[proc] |- Extract and convert the events');
-% events.TYP = sessionOffline1.TYP;
-% events.POS = proc_pos2win(sessionOffline1.POS, wshift*sessionOffline1.SampleRate, winconv, mlength*sessionOffline1.SampleRate);
-% events.DUR = floor(sessionOffline1.DUR/(wshift*sessionOffline1.SampleRate)) + 1;
-% events.conversion = winconv;
+    % %% Extracting events
+    % disp('[proc] |- Extract and convert the events');
+    % events.TYP = sessionOffline1.TYP;
+    % events.POS = proc_pos2win(sessionOffline1.POS, wshift*sessionOffline1.SampleRate, winconv, mlength*sessionOffline1.SampleRate);
+    % events.DUR = floor(sessionOffline1.DUR/(wshift*sessionOffline1.SampleRate)) + 1;
+    % events.conversion = winconv;
 
-%% Data information
-P = sessionOffline.P;
-NWindows  = size(P, 1);
-NFreqs    = size(P, 2);
-NChannels = size(P, 3);
+    %% Data information
+    P = sessionOffline.P;
+    NWindows  = size(P, 1);
+    NFreqs    = size(P, 2);
+    NChannels = size(P, 3);
 
-POS = sessionOffline.POS;
-TYP = sessionOffline.TYP;
-DUR = sessionOffline.DUR;
-%% Creating vector labels
-CFeedbackPOS = POS(TYP == 781);
-CFeedbackDUR = DUR(TYP == 781);
+    POS = sessionOffline.POS;
+    TYP = sessionOffline.TYP;
+    DUR = sessionOffline.DUR;
+    %% Creating vector labels
+    CFeedbackPOS = POS(TYP == 781);
+    CFeedbackDUR = DUR(TYP == 781);
 
-CuePOS = POS(TYP == 771 | TYP == 773 );
-CueDUR = DUR(TYP == 771 | TYP == 773 );
-CueTYP = TYP(TYP == 771 | TYP == 773);
+    CuePOS = POS(TYP == 771 | TYP == 773 );
+    CueDUR = DUR(TYP == 771 | TYP == 773 );
+    CueTYP = TYP(TYP == 771 | TYP == 773);
 
-FixPOS = POS(TYP == 786);
-FixDUR = DUR(TYP == 786);
-FixTYP = TYP(TYP == 786);
+    FixPOS = POS(TYP == 786);
+    FixDUR = DUR(TYP == 786);
+    FixTYP = TYP(TYP == 786);
 
-NumTrials = length(CFeedbackPOS);
+    NumTrials = length(CFeedbackPOS);
 
-% We consider the intersting period from Cue apperance to end of continuous feedback
-Ck = zeros(NWindows, 1);
-Tk = zeros(NWindows, 1);
-TrialStart = nan(NumTrials, 1);
-TrialStop  = nan(NumTrials, 1);
-FixStart = nan(NumTrials, 1);
-FixStop  = nan(NumTrials, 1);
-for trId = 1:NumTrials
-    cstart = CuePOS(trId);
-    cstop  = CFeedbackPOS(trId) + CFeedbackDUR(trId) - 1;
-    Ck(cstart:cstop) = CueTYP(trId);
-    Tk(cstart:cstop) = trId;
-    
-    TrialStart(trId) = cstart;
-    TrialStop(trId)  = cstop;
-    FixStart(trId)   = FixPOS(trId);
-    FixStop(trId)    = FixPOS(trId) + FixDUR(trId) - 1;
-end
+    % We consider the intersting period from Cue apperance to end of continuous feedback
+    Ck = zeros(NWindows, 1);
+    Tk = zeros(NWindows, 1);
+    TrialStart = nan(NumTrials, 1);
+    TrialStop  = nan(NumTrials, 1);
+    FixStart = nan(NumTrials, 1);
+    FixStop  = nan(NumTrials, 1);
+    for trId = 1:NumTrials
+        cstart = CuePOS(trId);
+        cstop  = CFeedbackPOS(trId) + CFeedbackDUR(trId) - 1;
+        Ck(cstart:cstop) = CueTYP(trId);
+        Tk(cstart:cstop) = trId;
 
-%% Trial extraction
-
-% Extracting data for each trial (be careful that length might be different for few sample)
-disp('[proc] + Extracting data for each trial');
-MinTrialDur = min(TrialStop - TrialStart);
-TrialData   = nan(MinTrialDur, NFreqs, NChannels, NumTrials);
-tCk = zeros(NumTrials, 1);
-for trId = 1:NumTrials
-    cstart = TrialStart(trId);
-    cstop  = cstart + MinTrialDur - 1;
-    TrialData(:, :, :, trId)   = P(cstart:cstop, :, :);
-   
-    tCk(trId) = unique(Ck(cstart:cstop));
-end
-
-%% Baseline extraction (from fixation)
-disp('[proc] + Extracting baseline data for each trial');
-MinFixDur = min(FixStop - FixStart);
-FixData   = nan(MinFixDur, NFreqs, NChannels, NumTrials);
-
-for trId = 1:NumTrials
-    cstart = FixStart(trId);
-    cstop  = cstart + MinFixDur - 1;
-    FixData(:, :, :, trId)   = P(cstart:cstop, :, :);
-end
-
-%% ERD/ERS
-disp('[proc] + Computing ERD/ERS');
-
-% Average and replicate the value of the baseline
-Baseline = repmat(mean(FixData), [size(TrialData, 1) 1 1 1]);
-ERD = log(TrialData./ Baseline);
-
-%% Visualization 1
-figure;
-t = linspace(0, MinTrialDur*wshift, MinTrialDur);
-ChannelSelected = [4 5 7 9 11]; 
-
-chandles = [];
-for cId = 1:data.nclasses
-    
-    climits = nan(2, length(ChannelSelected));
-    for chId = 1:length(ChannelSelected)
-        subplot(2, length(ChannelSelected), (cId - 1)*length(ChannelSelected) + chId);
-        cdata = mean(ERD(:, :, ChannelSelected(chId), tCk == data.classId(cId)), 4);
-        imagesc(t, sessionOffline.freqs, cdata');
-        set(gca,'YDir','normal');
-        climits(:, chId) = get(gca, 'CLim');
-        chandles = cat(1, chandles, gca);
-        colormap(hot);
-        colorbar;
-        title(['Channel ' data.channelLb{ChannelSelected(chId)} ' | ' data.classLb{cId}]);
-        xlabel('Time [s]');
-        ylabel('Frequency [Hz]');
-        line([1 1],get(gca,'YLim'),'Color',[0 0 0])
+        TrialStart(trId) = cstart;
+        TrialStop(trId)  = cstop;
+        FixStart(trId)   = FixPOS(trId);
+        FixStop(trId)    = FixPOS(trId) + FixDUR(trId) - 1;
     end
-    
-end
-set(chandles, 'CLim', [min(min(climits)) max(max(climits))]);
 
+    %% Trial extraction
 
+    % Extracting data for each trial (be careful that length might be different for few sample)
+    disp('[proc] + Extracting data for each trial');
+    MinTrialDur = min(TrialStop - TrialStart);
+    TrialData   = nan(MinTrialDur, NFreqs, NChannels, NumTrials);
+    tCk = zeros(NumTrials, 1);
+    for trId = 1:NumTrials
+        cstart = TrialStart(trId);
+        cstop  = cstart + MinTrialDur - 1;
+        TrialData(:, :, :, trId)   = P(cstart:cstop, :, :);
 
-%% from ex4_features_selection_students.m
-
-%% Apply log to the data
-SelFreqs = 4:2:48;
-%SelFreqs = 2:2:48;
-fullFreqs = sessionOffline.freqs;
-[freqs, idfreqs] = intersect(fullFreqs, SelFreqs);
-
-U = log(sessionOffline.P);
-
-NumWins  = size(U, 1);
-NumFreqs = size(U, 2);
-NumChans = size(U, 3);
-
-
-%% from ex5_classification_train.m
-
-Rk = sessionOffline.RkP;
-Runs = unique(Rk);
-NumRuns = length(Runs);
-
-%% Labeling the data
-disp('[proc] + Labeling the data');
-
-
-POS = sessionOffline.POS;
-TYP = sessionOffline.TYP;
-DUR = sessionOffline.DUR;
-
-CFeedbackPOS = POS(TYP == 781);
-CFeedbackDUR = DUR(TYP == 781);
-
-CuePOS = POS(TYP == 771 | TYP == 773 );
-CueDUR = DUR(TYP == 771 | TYP == 773 );
-CueTYP = TYP(TYP == 771 | TYP == 773 );
-
-NumTrials = length(CueTYP);
-% 
-% We consider the intersting period from Cue apperance to end of continuous feedback
-Ck = zeros(NumWins, 1);
-Tk = zeros(NumWins, 1);
-
-for trId = 1:NumTrials
-    cstart = CuePOS(trId);
-    cstop  = CFeedbackPOS(trId) + CFeedbackDUR(trId) - 1;
-    Ck(cstart:cstop) = CueTYP(trId);
-    Tk(cstart:cstop) = trId;
-end
-
-%% Computing fisher score (for each run)
-disp('[proc] + Computing fisher score');
-
-NumClasses = length(data.classId);
-
-FisherScore = nan(NumFreqs, NumChans, NumRuns);
-FS2 = nan(NumFreqs*NumChans, NumRuns);
-for rId = 1:NumRuns
-    rindex = Rk == Runs(rId); 
-    
-    cmu    = nan(NumFreqs, NumChans, 2);
-    csigma = nan(NumFreqs, NumChans, 2);
-    
-    for cId = 1:NumClasses
-        cindex = rindex & Ck == data.classId(cId);
-        cmu(:, :, cId) = squeeze(mean(U(cindex, :, :)));
-        csigma(:, :, cId) = squeeze(std(U(cindex, :, :)));
+        tCk(trId) = unique(Ck(cstart:cstop));
     end
-    
-    FisherScore(:, :, rId) = abs(cmu(:, :, 2) - cmu(:, :, 1)) ./ sqrt( ( csigma(:, :, 1).^2 + csigma(:, :, 2).^2 ) );
-end
 
-%% Visualization Fisher score
-disp('[proc] |- Visualizing fisher score');
-OfflineRuns = 1:NumRuns;
-climits = [];
-handles = nan(NumRuns, 1);
-fig1 = figure;
-SelChans={};
-SelFreqs=[];
-FisherScoretemp=FisherScore;
-threshold = max(FisherScore(:))-0.2;
-if threshold< 5
-    threshold = 0.5
-end
-for rId = 1:length(OfflineRuns)
-    subplot(1, length(OfflineRuns), rId);
-    imagesc(FisherScore(:, :, OfflineRuns(rId))');
-    
-    % To select the freq and chan with the highest fisher score
-    A=FisherScoretemp(:,:,OfflineRuns(rId));
-    val=10;
-    while(val>threshold & length(SelFreqs)<10)        
-        [val,idx] = max(A(:));
-        if val>threshold & length(SelFreqs)<10
-            [row,col] = ind2sub(size(A),idx);
-            A(row,col)=0;
-            FisherScoretemp(row,col,:)=0;
-            SelChans=cat(2,SelChans,data.channelLb(col));
-            SelFreqs=cat(2,SelFreqs,freqs(row));
+    %% Baseline extraction (from fixation)
+    disp('[proc] + Extracting baseline data for each trial');
+    MinFixDur = min(FixStop - FixStart);
+    FixData   = nan(MinFixDur, NFreqs, NChannels, NumTrials);
+
+    for trId = 1:NumTrials
+        cstart = FixStart(trId);
+        cstop  = cstart + MinFixDur - 1;
+        FixData(:, :, :, trId)   = P(cstart:cstop, :, :);
+    end
+
+    %% ERD/ERS
+    disp('[proc] + Computing ERD/ERS');
+
+    % Average and replicate the value of the baseline
+    Baseline = repmat(mean(FixData), [size(TrialData, 1) 1 1 1]);
+    ERD = log(TrialData./ Baseline);
+
+    %% Visualization 1
+    figure;
+    t = linspace(0, MinTrialDur*wshift, MinTrialDur);
+    ChannelSelected = [4 5 7 9 11]; 
+
+    chandles = [];
+    for cId = 1:data.nclasses
+
+        climits = nan(2, length(ChannelSelected));
+        for chId = 1:length(ChannelSelected)
+            subplot(2, length(ChannelSelected), (cId - 1)*length(ChannelSelected) + chId);
+            cdata = mean(ERD(:, :, ChannelSelected(chId), tCk == data.classId(cId)), 4);
+            imagesc(t, sessionOffline.freqs, cdata');
+            set(gca,'YDir','normal');
+            climits(:, chId) = get(gca, 'CLim');
+            chandles = cat(1, chandles, gca);
+            colormap(hot);
+            colorbar;
+            title(['Channel ' data.channelLb{ChannelSelected(chId)} ' | ' data.classLb{cId}]);
+            xlabel('Time [s]');
+            ylabel('Frequency [Hz]');
+            line([1 1],get(gca,'YLim'),'Color',[0 0 0])
         end
+
     end
-    
+    set(chandles, 'CLim', [min(min(climits)) max(max(climits))]);
+
+
+
+    %% from ex4_features_selection_students.m
+
+    %% Apply log to the data
+    SelFreqs = 4:2:48;
+    %SelFreqs = 2:2:48;
+    fullFreqs = sessionOffline.freqs;
+    [freqs, idfreqs] = intersect(fullFreqs, SelFreqs);
+
+    U = log(sessionOffline.P);
+
+    NumWins  = size(U, 1);
+    NumFreqs = size(U, 2);
+    NumChans = size(U, 3);
+
+
+    %% from ex5_classification_train.m
+
+    Rk = sessionOffline.RkP;
+    Runs = unique(Rk);
+    NumRuns = length(Runs);
+
+    %% Labeling the data
+    disp('[proc] + Labeling the data');
+
+
+    POS = sessionOffline.POS;
+    TYP = sessionOffline.TYP;
+    DUR = sessionOffline.DUR;
+
+    CFeedbackPOS = POS(TYP == 781);
+    CFeedbackDUR = DUR(TYP == 781);
+
+    CuePOS = POS(TYP == 771 | TYP == 773 );
+    CueDUR = DUR(TYP == 771 | TYP == 773 );
+    CueTYP = TYP(TYP == 771 | TYP == 773 );
+
+    NumTrials = length(CueTYP);
+    % 
+    % We consider the intersting period from Cue apperance to end of continuous feedback
+    Ck = zeros(NumWins, 1);
+    Tk = zeros(NumWins, 1);
+
+    for trId = 1:NumTrials
+        cstart = CuePOS(trId);
+        cstop  = CFeedbackPOS(trId) + CFeedbackDUR(trId) - 1;
+        Ck(cstart:cstop) = CueTYP(trId);
+        Tk(cstart:cstop) = trId;
+    end
+
+    %% Computing fisher score (for each run)
+    disp('[proc] + Computing fisher score');
+
+    NumClasses = length(data.classId);
+
+    FisherScore = nan(NumFreqs, NumChans, NumRuns);
+    FS2 = nan(NumFreqs*NumChans, NumRuns);
+    for rId = 1:NumRuns
+        rindex = Rk == Runs(rId); 
+
+        cmu    = nan(NumFreqs, NumChans, 2);
+        csigma = nan(NumFreqs, NumChans, 2);
+
+        for cId = 1:NumClasses
+            cindex = rindex & Ck == data.classId(cId);
+            cmu(:, :, cId) = squeeze(mean(U(cindex, :, :)));
+            csigma(:, :, cId) = squeeze(std(U(cindex, :, :)));
+        end
+
+        FisherScore(:, :, rId) = abs(cmu(:, :, 2) - cmu(:, :, 1)) ./ sqrt( ( csigma(:, :, 1).^2 + csigma(:, :, 2).^2 ) );
+    end
+
+    %% Visualization Fisher score
+    disp('[proc] |- Visualizing fisher score');
+    OfflineRuns = 1:NumRuns;
+    climits = [];
+    handles = nan(NumRuns, 1);
+    fig1 = figure;
+    SelChans={};
+    SelFreqs=[];
+    FisherScoretemp=FisherScore;
+    threshold = max(FisherScore(:))-0.2;
+    if threshold< 0.5
+        threshold = 0.5
+    end
+    for rId = 1:length(OfflineRuns)
+        subplot(1, length(OfflineRuns), rId);
+        imagesc(FisherScore(:, :, OfflineRuns(rId))');
+
+        % To select the freq and chan with the highest fisher score
+        A=FisherScoretemp(:,:,OfflineRuns(rId));
+        val=10;
+        while(val>threshold & length(SelFreqs)<10)        
+            [val,idx] = max(A(:));
+
+            if val>threshold & length(SelFreqs)<10
+                [row,col] = ind2sub(size(A),idx);
+                A(row,col)=0;
+                FisherScoretemp(row,col,:)=0;
+                SelChans=cat(2,SelChans,data.channelLb(col));
+                SelFreqs=cat(2,SelFreqs,row);
+            end
+        end
+
+        axis square;
+        set(gca, 'XTick', 1:NumFreqs);
+        %set(gca, 'XTickLabel', freqs);
+        set(gca, 'YTick', 1:NumChans);
+        set(gca, 'YTickLabel', data.channelLb);
+        xtickangle(-90);
+
+        title(['Calibration run ' num2str(OfflineRuns(rId))]);
+
+        climits = cat(2, climits, get(gca, 'CLim'));
+        handles(OfflineRuns(rId)) = gca;
+    end
+
+
+    set(handles, 'CLim', [min(min(climits)) max(max(climits))]);
+
+    title("Fisher score");
+
+    %% Features selection
+
+    disp('[proc] |- Select features');
+    %SelChans = {'C4', 'C4', 'FC2'};
+    %SelFreqs = [20 22 22];
+
+    NumSelFeatures = length(SelChans);
+
+    [~, SelChansId] = ismember(SelChans, data.channelLb);
+    %[~, SelFreqsId] = ismember(SelFreqs, freqs);
+    SelFreqsId=SelFreqs;
+    F = nan(NumWins, NumSelFeatures);
+    for ftId = 1:NumSelFeatures
+        cfrq  = SelFreqsId(ftId);
+        cchan = SelChansId(ftId);
+        F(:, ftId) = U(:, cfrq, cchan);
+    end
+
+    %% Classifier Train (LDA or QDA);
+    disp('[proc] + Train classifier');
+    LabelIdx = Ck == 771 | Ck == 773;
+    % Model = fitcdiscr(F(LabelIdx, :), Ck(LabelIdx));
+    Model = fitcdiscr(F(LabelIdx, :), Ck(LabelIdx), 'DiscrimType','quadratic');
+
+    %% Classifier accuracy on trainset
+
+    [Gk, pp] = predict(Model, F);
+
+    SSAcc = 100*sum(Gk(LabelIdx) == Ck(LabelIdx))./length(Gk(LabelIdx));
+
+    SSClAcc = nan(NumClasses, 1);
+    for cId = 1:NumClasses
+        cindex = Ck == data.classId(cId);
+        SSClAcc(cId) = 100*sum(Gk(cindex) == Ck(cindex))./length(Gk(cindex));
+    end
+
+    %% Saving classifier
+    disp('[out] + Save classifier');
+    filename = 'ah7_20201215_classifier.mat';
+    save(filename, 'Model', 'SelChansId', 'SelFreqsId');
+
+    %% Visualize classifier
+    fig2 = figure;
+    h1 = gscatter(F(LabelIdx, 1),F(LabelIdx, 2),Ck(LabelIdx),'kb','ov^',[],'off');
+    grid on;
+    xlim([-8 0]);
+    ylim([-8 1.5]);
+    xlabel([SelChans{1} '@' num2str(SelFreqs(1)) 'Hz']);
+    ylabel([SelChans{2} '@' num2str(SelFreqs(2)) 'Hz']);
     axis square;
-    set(gca, 'XTick', 1:NumFreqs);
-    set(gca, 'XTickLabel', freqs);
-    set(gca, 'YTick', 1:NumChans);
-    set(gca, 'YTickLabel', data.channelLb);
-    xtickangle(-90);
-    
-    title(['Calibration run ' num2str(OfflineRuns(rId))]);
-    
-    climits = cat(2, climits, get(gca, 'CLim'));
-    handles(OfflineRuns(rId)) = gca;
+    hold on
+
+    % Linear
+    % K = Model.Coeffs(1,2).Const;
+    % L = Model.Coeffs(1,2).Linear;
+    % f = @(x1,x2) K + L(1)*x1 + L(2)*x2;
+
+    % Quadratic
+    K = Model.Coeffs(1,2).Const;
+    L = Model.Coeffs(1,2).Linear;
+    Q = Model.Coeffs(1,2).Quadratic;
+    f = @(x1,x2) K + L(1)*x1 + L(2)*x2 + Q(1,1)*x1.^2 + ...
+        (Q(1,2)+Q(2,1))*x1.*x2 + Q(2,2)*x2.^2;
+
+    h2 = fimplicit(f);
+    h2.Color = 'r';
+    h2.LineWidth = 2;
+    h2.DisplayName = 'Boundary between boht hands & both feet';
+    legend('both feet', 'both hands', 'Boundary');
+    hold off;
+
 end
-
-
-set(handles, 'CLim', [min(min(climits)) max(max(climits))]);
-
-sgtitle('Fisher score');
-
-%% Features selection
-
-disp('[proc] |- Select features');
-%SelChans = {'C4', 'C4', 'FC2'};
-%SelFreqs = [20 22 22];
-
-NumSelFeatures = length(SelChans);
-
-[~, SelChansId] = ismember(SelChans, data.channelLb);
-[~, SelFreqsId] = ismember(SelFreqs, freqs);
-
-F = nan(NumWins, NumSelFeatures);
-for ftId = 1:NumSelFeatures
-    cfrq  = SelFreqsId(ftId);
-    cchan = SelChansId(ftId);
-    F(:, ftId) = U(:, cfrq, cchan);
-end
-
-%% Classifier Train (LDA or QDA);
-disp('[proc] + Train classifier');
-LabelIdx = Ck == 771 | Ck == 773;
-% Model = fitcdiscr(F(LabelIdx, :), Ck(LabelIdx));
-Model = fitcdiscr(F(LabelIdx, :), Ck(LabelIdx), 'DiscrimType','quadratic');
-
-%% Classifier accuracy on trainset
-
-[Gk, pp] = predict(Model, F);
-
-SSAcc = 100*sum(Gk(LabelIdx) == Ck(LabelIdx))./length(Gk(LabelIdx));
-
-SSClAcc = nan(NumClasses, 1);
-for cId = 1:NumClasses
-    cindex = Ck == data.classId(cId);
-    SSClAcc(cId) = 100*sum(Gk(cindex) == Ck(cindex))./length(Gk(cindex));
-end
-
-%% Saving classifier
-disp('[out] + Save classifier');
-filename = 'ah7_20201215_classifier.mat';
-save(filename, 'Model', 'SelChansId', 'SelFreqsId');
-
-%% Visualize classifier
-fig2 = figure;
-h1 = gscatter(F(LabelIdx, 1),F(LabelIdx, 2),Ck(LabelIdx),'kb','ov^',[],'off');
-grid on;
-xlim([-8 0]);
-ylim([-8 1.5]);
-xlabel([SelChans{1} '@' num2str(SelFreqs(1)) 'Hz']);
-ylabel([SelChans{2} '@' num2str(SelFreqs(2)) 'Hz']);
-axis square;
-hold on
-
-% Linear
-% K = Model.Coeffs(1,2).Const;
-% L = Model.Coeffs(1,2).Linear;
-% f = @(x1,x2) K + L(1)*x1 + L(2)*x2;
-
-% Quadratic
-K = Model.Coeffs(1,2).Const;
-L = Model.Coeffs(1,2).Linear;
-Q = Model.Coeffs(1,2).Quadratic;
-f = @(x1,x2) K + L(1)*x1 + L(2)*x2 + Q(1,1)*x1.^2 + ...
-    (Q(1,2)+Q(2,1))*x1.*x2 + Q(2,2)*x2.^2;
-
-h2 = fimplicit(f);
-h2.Color = 'r';
-h2.LineWidth = 2;
-h2.DisplayName = 'Boundary between boht hands & both feet';
-legend('both feet', 'both hands', 'Boundary');
-hold off;
-
-
 
 
 
@@ -500,16 +502,21 @@ CueClasses    = [771 783 773];
 LbClasses     = {'both feet', 'rest', 'both hands'};
 ValueClasses  = [1 0.5 0];
 
-% if NaN result at the next part , reduce this value this value
 Threshold     = 0.7;
 
-% if nothing plot, change this value
-SelTrial = 58; % 40  
+SelTrial = 15;   
 
+
+% result for the class data : 
 % Trial 15: good rest
 % Trial 80: bad rest
 % Trial 55: good both hands
 % Trial 58: good both feet
+
+
+
+% if NaN result at the next part , reduce this value this value
+% if nothing plot, change this value
 
 cindex = Tk == SelTrial;
 [~, ClassIdx] = ismember(unique(Ck(cindex)), CueClasses);
@@ -525,20 +532,20 @@ plot(pp(cindex, 1), 'o', 'Color', GreyColor);
 plot(ipp(cindex), 'k', 'LineWidth', 2);
 
 % Plotting actual target class
-yline(ValueClasses(ClassIdx), LineColors{ClassIdx}, 'LineWidth', 5);
+plot(ipp(cindex)*0+ValueClasses(ClassIdx), LineColors{ClassIdx}, 'LineWidth', 5);
 
 % Plotting 0.5 line
-yline(0.5, '--k');
+plot(ipp(cindex)*0+0.5, '--k');
 
 % Plotting thresholds
-yline(Threshold, 'k', 'Th_{1}');
-yline(1-Threshold, 'k', 'Th_{2}');
+plot(ipp(cindex)*0+Threshold, 'k');
+plot(ipp(cindex)*0+1-Threshold, 'k');
 hold off;
 
 grid on;
 ylim([0 1]);
 xlim([1 sum(cindex)]);
-legend('raw prob', 'integrated prob');
+legend('raw prob', 'integrated prob', 'actual target class','0.5','Th_{1}', 'Th_{2}');
 ylabel('probability/control')
 xlabel('sample');
 title(['Trial ' num2str(SelTrial) '/' num2str(NumTrials) ' - Class ' LbClasses{ClassIdx} ' (' num2str(CueClasses(ClassIdx)) ')']);
