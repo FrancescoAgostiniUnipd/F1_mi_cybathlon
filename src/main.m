@@ -4,7 +4,7 @@ clear all; close all; clc;
 addpath('./Function/');
 addpath('./Util/');
 
-% Load Data
+% Load Dataf
 data = DataLoader;
 
 
@@ -38,7 +38,7 @@ disp(session1.SampleRate)     % Display Sample rate
 figure;
 subplot(3,2,1);
 s1 = session1.s(:,1:16); % because the column 17 is empty
-plot(sessionOffline1.P);   % Plot samples
+plot(sessionOffline1.s);   % Plot samples
 title('samples')
 subplot(3,2,2);
 plot(session1.TYP);           % Plot session TYP vector 
@@ -163,16 +163,16 @@ ERD = log(TrialData./ Baseline);
 %% Visualization 1
 figure;
 t = linspace(0, MinTrialDur*wshift, MinTrialDur);
-ChannelSelected = [7 9 11]; 
+ChannelSelected = [4 5 7 9 11]; 
 
 chandles = [];
 for cId = 1:data.nclasses
     
     climits = nan(2, length(ChannelSelected));
     for chId = 1:length(ChannelSelected)
-        subplot(2, 3, (cId - 1)*length(ChannelSelected) + chId);
+        subplot(2, length(ChannelSelected), (cId - 1)*length(ChannelSelected) + chId);
         cdata = mean(ERD(:, :, ChannelSelected(chId), tCk == data.classId(cId)), 4);
-        imagesc(t, session1.freqs, cdata');
+        imagesc(t, sessionOffline1.freqs, cdata');
         set(gca,'YDir','normal');
         climits(:, chId) = get(gca, 'CLim');
         chandles = cat(1, chandles, gca);
@@ -270,11 +270,11 @@ for rId = 1:length(OfflineRuns)
     
     % To select the freq and chan with the highest fisher score
     A=FisherScoretemp(:,:,OfflineRuns(rId));
-    val = 10;
-    while(val>0.9)
-        
+    threshold = max(FisherScoretemp(:))-0.2;
+    val=10;
+    while(val>threshold)        
         [val,idx] = max(A(:));
-        if val>0.9
+        if val>threshold & length(SelFreqs)<10
             [row,col] = ind2sub(size(A),idx);
             A(row,col)=0;
             FisherScoretemp(row,col,:)=0;
@@ -451,8 +451,8 @@ LabelIdx = Ck == 771 | Ck == 773;
 [Gk, pp] = predict(Model, F);
 
 SSAcc = 100*sum(Gk(LabelIdx) == Ck(LabelIdx))./length(Gk(LabelIdx));
-Classes = classId;
-NumClasses = length(classId);
+Classes = data.classId;
+NumClasses = length(data.classId);
 SSClAcc = nan(NumClasses, 1);
 for cId = 1:NumClasses
     cindex = Ck == Classes(cId);

@@ -46,8 +46,8 @@ classdef DataLoader
         %% Constructor
         function obj = DataLoader()
             % Setting up env
-            % obj.datapath            = '../data/';
-            obj.datapath            = '../datalectures/';
+            obj.datapath            = '../data/';
+            %obj.datapath            = '../datalectures/';
             obj.datasample          = 512;
             obj.channelLb           = {'Fz','FC3','FC1','FCz','FC2','FC4','C3','C1','Cz','C2','C4','CP3','CP1','CPz','CP2','CP4'};
             obj.channelId           = 1:length(obj.channelLb);
