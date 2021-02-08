@@ -8,7 +8,7 @@ addpath('./Util/');
 datapath = "../datalectures/";
 
 % Load Data
-data = DataLoader;
+data = DataLoader(datapath);
 
 % Process Data
 processor = DataProcessing(data);

@@ -51,9 +51,9 @@ classdef DataLoader
     %% Class constructor and loader method
     methods
         %% Constructor
-        function obj = DataLoader()
+        function obj = DataLoader(path)
             % Setting up env
-            obj.datapath            = '../data/';
+            obj.datapath            = convertStringsToChars(path);
             obj.datasample          = 512;
             obj.channelLb           = {'Fz','FC3','FC1','FCz','FC2','FC4','C3','C1','Cz','C2','C4','CP3','CP1','CPz','CP2','CP4'};
             obj.channelId           = 1:length(obj.channelLb);
@@ -170,7 +170,6 @@ classdef DataLoader
             
             for i = 1 : length(gdfs)
                 obj.sessionsData{n}.filenames{i} = fullfile(path,gdfs(i).name);
-                %fprintf("Loading file #%d %s\n",i,obj.sessionsData{n}.filenames{i});
             end
            
             
@@ -222,7 +221,6 @@ classdef DataLoader
              
             for fId=1:nfiles
                 % Loading SGD file
-                disp(obj.sessionsData{n}.filenames{fId})
                 [curr_s, curr_h] = sload(obj.sessionsData{n}.filenames{fId});
                 
                 % Do preprocessing on single file
