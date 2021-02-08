@@ -15,16 +15,16 @@ sessionsNames = data.getSessionsNames();  % Load Sessions names
 sessionsPath  = data.getSessionsPaths();  % Load Sessions Path
 sessionsData  = data.getSessionsData();   % Load Sessions Data
 
-% Session 1 example
-session1        = data.getSessionById(1);                 % Load all data of session #1
-sessionOnline1  = data.getSessionOnlineById(1);           % Load all online data of session #1
-sessionOffline1 = data.getSessionOfflineById(1);          % Load all offline data of session #1
-allRuns1        = data.allRuns{1};                        % overall runs in session 1
-offlineRuns1    = data.offlineRuns{1};                    % offline runs in session 1
-onlineRuns1     = data.onlineRuns{1};                     % online runs in session 1
+% Session i example
+i=2;
+session        = data.getSessionById(i);                 % Load all data of session #1
+sessionOnline  = data.getSessionOnlineById(i);           % Load all online data of session #1
+sessionOffline = data.getSessionOfflineById(i);          % Load all offline data of session #1
+allRuns        = data.allRuns{i};                        % overall runs in session 1
+offlineRuns    = data.offlineRuns{i};                    % offline runs in session 1
+onlineRuns     = data.onlineRuns{i};                     % online runs in session 1
 
 
-%sessionOffline1 = data.getSessionOfflineById(9);
 
 %session2        = data.getSessionByName("20190711_F1");         % Load data of session 20190711_F1
 %sessionOnline2  = data.getSessionOnlineByName("20190711_F1");   % Load data of session 20190711_F1
@@ -34,26 +34,26 @@ onlineRuns1     = data.onlineRuns{1};                     % online runs in sessi
 
 %% Example of data usage from a sessions
 
-disp(session1.SampleRate)     % Display Sample rate
+disp(session.SampleRate)     % Display Sample rate
 figure;
 subplot(3,2,1);
-s1 = session1.s(:,1:16); % because the column 17 is empty
-plot(sessionOffline1.s);   % Plot samples
+s1 = session.s(:,1:16); % because the column 17 is empty
+plot(sessionOffline.s);   % Plot samples
 title('samples')
 subplot(3,2,2);
-plot(session1.TYP);           % Plot session TYP vector 
+plot(session.TYP);           % Plot session TYP vector 
 title('session TYP')
 subplot(3,2,3);
-plot(session1.DUR);           % Plot session DUR vector
+plot(session.DUR);           % Plot session DUR vector
 title('session DUR')
 subplot(3,2,4);
-plot(session1.POS);           % Plot session POS vector 
+plot(session.POS);           % Plot session POS vector 
 title('session POS')
 subplot(3,2,5);
-plot(session1.Rk);            % Plot session Rk 
+plot(session.Rk);            % Plot session Rk 
 title('session Rk')
 subplot(3,2,6);
-plot(session1.Mk);            % Plot session Mk 
+plot(session.Mk);            % Plot session Mk 
 title('session Mk')
 
 
@@ -65,46 +65,49 @@ wshift     = 0.0625; % ??
 winconv = 'backward'; % ??
 selfreqs   = 4:2:96; % ??
 
-%% Spatial filters
-disp('[proc] |- Applying CAR and Laplacian');
-load('./Util/laplacian16.mat');
-%s1 = session1.s(:,1:16); % because the column 17 is empty
-s_lap = s1*lap;
+% %% Spatial filters
+% disp('[proc] |- Applying CAR and Laplacian');
+% load('./Util/laplacian16.mat');
+% %s1 = session1.s(:,1:16); % because the column 17 is empty
+% s_lap = s1*lap;
+% 
+% 
+% %% Spectrogram (PSD)
+% disp('[proc] |- Computing spectrogram');
+% [P, freqgrid] = proc_spectrogram(s_lap, wlength, wshift, pshift, session1.SampleRate, mlength);  
+% size(P)
+% 
+% %% Selecting desired frequencies
+% [freqs, idfreqs] = intersect(freqgrid, selfreqs);
+% P = P(:, idfreqs, :);
 
-
-%% Spectrogram (PSD)
-disp('[proc] |- Computing spectrogram');
-[P, freqgrid] = proc_spectrogram(s_lap, wlength, wshift, pshift, session1.SampleRate, mlength);  
-size(P)
-
-%% Selecting desired frequencies
-[freqs, idfreqs] = intersect(freqgrid, selfreqs);
-P = P(:, idfreqs, :);
-size(P)
-%% Extracting events
-disp('[proc] |- Extract and convert the events');
-events.TYP = session1.TYP;
-events.POS = proc_pos2win(session1.POS, wshift*session1.SampleRate, winconv, mlength*session1.SampleRate);
-events.DUR = floor(session1.DUR/(wshift*session1.SampleRate)) + 1;
-events.conversion = winconv;
+% %% Extracting events
+% disp('[proc] |- Extract and convert the events');
+% events.TYP = sessionOffline1.TYP;
+% events.POS = proc_pos2win(sessionOffline1.POS, wshift*sessionOffline1.SampleRate, winconv, mlength*sessionOffline1.SampleRate);
+% events.DUR = floor(sessionOffline1.DUR/(wshift*sessionOffline1.SampleRate)) + 1;
+% events.conversion = winconv;
 
 %% Data information
-P = sessionOffline1.P;
+P = sessionOffline.P;
 NWindows  = size(P, 1);
 NFreqs    = size(P, 2);
 NChannels = size(P, 3);
 
+POS = sessionOffline.POS;
+TYP = sessionOffline.TYP;
+DUR = sessionOffline.DUR;
 %% Creating vector labels
-CFeedbackPOS = sessionOffline1.POS(sessionOffline1.TYP == 781);
-CFeedbackDUR = sessionOffline1.DUR(sessionOffline1.TYP == 781);
+CFeedbackPOS = POS(TYP == 781);
+CFeedbackDUR = DUR(TYP == 781);
 
-CuePOS = sessionOffline1.POS(sessionOffline1.TYP == 771 | sessionOffline1.TYP == 773 );
-CueDUR = sessionOffline1.DUR(sessionOffline1.TYP == 771 | sessionOffline1.TYP == 773 );
-CueTYP = sessionOffline1.TYP(sessionOffline1.TYP == 771 | sessionOffline1.TYP == 773);
+CuePOS = POS(TYP == 771 | TYP == 773 );
+CueDUR = DUR(TYP == 771 | TYP == 773 );
+CueTYP = TYP(TYP == 771 | TYP == 773);
 
-FixPOS = sessionOffline1.POS(sessionOffline1.TYP == 786);
-FixDUR = sessionOffline1.DUR(sessionOffline1.TYP == 786);
-FixTYP = sessionOffline1.TYP(sessionOffline1.TYP == 786);
+FixPOS = POS(TYP == 786);
+FixDUR = DUR(TYP == 786);
+FixTYP = TYP(TYP == 786);
 
 NumTrials = length(CFeedbackPOS);
 
@@ -172,7 +175,7 @@ for cId = 1:data.nclasses
     for chId = 1:length(ChannelSelected)
         subplot(2, length(ChannelSelected), (cId - 1)*length(ChannelSelected) + chId);
         cdata = mean(ERD(:, :, ChannelSelected(chId), tCk == data.classId(cId)), 4);
-        imagesc(t, sessionOffline1.freqs, cdata');
+        imagesc(t, sessionOffline.freqs, cdata');
         set(gca,'YDir','normal');
         climits(:, chId) = get(gca, 'CLim');
         chandles = cat(1, chandles, gca);
@@ -193,10 +196,11 @@ set(chandles, 'CLim', [min(min(climits)) max(max(climits))]);
 
 %% Apply log to the data
 SelFreqs = 4:2:48;
-fullFreqs = sessionOffline1.freqs;
+%SelFreqs = 2:2:48;
+fullFreqs = sessionOffline.freqs;
 [freqs, idfreqs] = intersect(fullFreqs, SelFreqs);
 
-U = log(sessionOffline1.P);
+U = log(sessionOffline.P);
 
 NumWins  = size(U, 1);
 NumFreqs = size(U, 2);
@@ -205,20 +209,24 @@ NumChans = size(U, 3);
 
 %% from ex5_classification_train.m
 
-Rk = sessionOffline1.RkP;
+Rk = sessionOffline.RkP;
 Runs = unique(Rk);
-%NumRuns = offlineRuns1;
 NumRuns = length(Runs);
 
 %% Labeling the data
 disp('[proc] + Labeling the data');
 
-CFeedbackPOS = sessionOffline1.POS(sessionOffline1.TYP == 781);
-CFeedbackDUR = sessionOffline1.DUR(sessionOffline1.TYP == 781);
 
-CuePOS = sessionOffline1.POS(sessionOffline1.TYP == 771 | sessionOffline1.TYP == 773 );
-CueDUR = sessionOffline1.DUR(sessionOffline1.TYP == 771 | sessionOffline1.TYP == 773 );
-CueTYP = sessionOffline1.TYP(sessionOffline1.TYP == 771 | sessionOffline1.TYP == 773 );
+POS = sessionOffline.POS;
+TYP = sessionOffline.TYP;
+DUR = sessionOffline.DUR;
+
+CFeedbackPOS = POS(TYP == 781);
+CFeedbackDUR = DUR(TYP == 781);
+
+CuePOS = POS(TYP == 771 | TYP == 773 );
+CueDUR = DUR(TYP == 771 | TYP == 773 );
+CueTYP = TYP(TYP == 771 | TYP == 773 );
 
 NumTrials = length(CueTYP);
 % 
@@ -264,15 +272,18 @@ fig1 = figure;
 SelChans={};
 SelFreqs=[];
 FisherScoretemp=FisherScore;
+threshold = max(FisherScore(:))-0.2;
+if threshold< 5
+    threshold = 0.5
+end
 for rId = 1:length(OfflineRuns)
     subplot(1, length(OfflineRuns), rId);
     imagesc(FisherScore(:, :, OfflineRuns(rId))');
     
     % To select the freq and chan with the highest fisher score
     A=FisherScoretemp(:,:,OfflineRuns(rId));
-    threshold = max(FisherScoretemp(:))-0.2;
     val=10;
-    while(val>threshold)        
+    while(val>threshold & length(SelFreqs)<10)        
         [val,idx] = max(A(:));
         if val>threshold & length(SelFreqs)<10
             [row,col] = ind2sub(size(A),idx);
@@ -380,9 +391,8 @@ hold off;
 %% from ex6_control_framework_intergartion.m
 
 %% Apply log to the data
-
+disp('[proc] + Apply log');
 SelFreqs = 4:2:48;
-sessionOnline = data.getSessionOnlineById(1);   
 fullfreqs = sessionOnline.freqs;
 [freqs, idfreqs] = intersect(fullfreqs, SelFreqs);
 
@@ -424,6 +434,7 @@ for trId = 1:NumTrials
 end
 
 %% Loading the classifier
+disp('[proc] + Loading classifier');
 classifier_name = 'ah7_20201215_classifier.mat';
 MDL = load(classifier_name);
 SelChansId = MDL.SelChansId;
@@ -447,6 +458,8 @@ disp('[proc] + Evaluate classifier');
 LabelIdx = Ck == 771 | Ck == 773;
 
 %% Overall classifier accuracy on testset
+
+disp('[proc] + Overall classifier accuracy');
 
 [Gk, pp] = predict(Model, F);
 
@@ -486,9 +499,12 @@ fig1 = figure;
 CueClasses    = [771 783 773];
 LbClasses     = {'both feet', 'rest', 'both hands'};
 ValueClasses  = [1 0.5 0];
+
+% if NaN result at the next part , reduce this value this value
 Threshold     = 0.7;
 
-SelTrial = 50;
+% if nothing plot, change this value
+SelTrial = 58; % 40  
 
 % Trial 15: good rest
 % Trial 80: bad rest
@@ -529,6 +545,10 @@ title(['Trial ' num2str(SelTrial) '/' num2str(NumTrials) ' - Class ' LbClasses{C
 
 
 %% Compute performances
+
+% if NaN Result for PerfActive, reduce the Threshold parameters line 504
+
+
 ActualClass = TYP(TYP == 771 | TYP == 773 | TYP == 783);
 Decision = nan(NumTrials, 1);
 

@@ -62,7 +62,7 @@ classdef DataLoader
             obj.wlength             = 0.5;
             obj.pshift              = 0.25;                  
             obj.wshift              = 0.0625;  
-            obj.selfreqs            = 4:2:48;
+            obj.selfreqs            = 4:2:96;
             obj.winconv             = 'backward'; 
             obj.sessionsData        = [];
             obj.sessionsDataOffline = [];
