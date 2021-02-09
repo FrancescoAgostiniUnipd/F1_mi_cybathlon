@@ -7,7 +7,7 @@ Authors: Agostini Francesco (francesco.agostini.5@studenti.unipd.it)
           Deschaux Ophélie   (opheliecandicemarine.deschaux@studenti.unipd.it)
           Marcon Francesco   (francesco.marcon.2@studenti.unipd.it)
 
-Version: 0.4
+Version: 0.5
 
 %}
 %% Class Dataloader definition
@@ -51,7 +51,7 @@ classdef DataLoader
     %% Class constructor and loader method
     methods
         %% Constructor
-        function obj = DataLoader(path)
+        function obj = DataLoader(path,f,ml,wl,ps,ws,wc)
             % Setting up env
             obj.datapath            = convertStringsToChars(path);
             obj.datasample          = 512;
@@ -66,12 +66,12 @@ classdef DataLoader
             obj.modalityLb          = {'offline','online'};
             
             % Spectrogram params
-            obj.mlength             = 1;
-            obj.wlength             = 0.5;
-            obj.pshift              = 0.25;                  
-            obj.wshift              = 0.0625;  
-            obj.selfreqs            = 4:2:48;
-            obj.winconv             = 'backward';
+            obj.mlength             = ml;
+            obj.wlength             = wl;
+            obj.pshift              = ps;                  
+            obj.wshift              = ws;  
+            obj.selfreqs            = f;
+            obj.winconv             = wc;
             
             % Only initialize as empty array
             obj.nsessions           = 0;

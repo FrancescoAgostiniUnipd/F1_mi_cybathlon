@@ -16,7 +16,7 @@ classdef DataProcessing
     %% Class Properties 
     properties
         loader                       % DataLoader refs
-        
+        % Attributes for trial
         NWindows  
         NFreqs   
         NChannels 
@@ -38,21 +38,35 @@ classdef DataProcessing
         MinTrialDur
         TrialData
         tCk
-        
+        % Attributes for fix
         MinFixDur
         FixData
-        
+        % Attributes for Baseline and ERD
         Baseline
         ERD
-
+        % Attributes for LOG
         SelFreqs
+        U
+        NumWins  
+        NumFreqs
+        NumChans
+        Rk
+        Runs
+        NumRuns
+        freqs
+        idfreqs
+        NumClasses
+        % Attributes for Fisher score
+        FisherScore
+        FS2
     end
     
     methods
         %% Constructor
-        function obj = DataProcessing(dataloader)
-            % Sessions data loading
-            obj.loader              = dataloader;
+        function obj = DataProcessing(dataloader,f)
+            % Sessions data loading and param
+            obj.loader                  = dataloader;
+            obj.SelFreqs                = f;
             % Trial Vectors
             obj.NWindows                = [];
             obj.NFreqs                  = [];
@@ -78,20 +92,33 @@ classdef DataProcessing
             % Baseline data
             obj.MinFixDur               = [];
             obj.FixData                 = [];
-            obj.baseline                = [];
+            obj.Baseline                = [];
              
             obj.ERD                     = [];
             
-            obj.SelFreqs = 4:2:48;
+            obj.U                       = [];
+            obj.NumWins                 = [];
+            obj.NumFreqs                = [];
+            obj.NumChans                = [];
+            obj.NumClasses              = [];
+            obj.Rk                      = [];
+            obj.Runs                    = [];
+            obj.NumRuns                 = [];
+            obj.freqs                   = [];
+            obj.idfreqs                 = [];
             
+            obj.FisherScore             = []; 
+            obj.FS2                     = [];
             
+            % Process session from dataloader
+            obj = obj.sessionsProcessing();
         end
         
         %% Sessions Iterator
         function obj = sessionsProcessing(obj)
            for i=1:obj.loader.nsessions
                 fprintf("Processing session #%d %s \n",i,obj.loader.sessionsPaths{i});
-                obj.processSession(i);
+                obj = obj.processSession(i);
             end 
         end
         
@@ -101,6 +128,9 @@ classdef DataProcessing
             obj = obj.extractTrial(index);
             obj = obj.baselineExtraction(index);
             obj = obj.ErsErdComputing(index);
+            obj = obj.LogData(index);
+            obj = obj.LabelingData(index);
+            obj = obj.computeFisherScore(index);
         end
         
         
@@ -188,33 +218,30 @@ classdef DataProcessing
         function obj = LogData(obj,i)
             
             fullFreqs = obj.loader.sessionsDataOffline{i}.freqs;
-            [freqs, idfreqs] = intersect(fullFreqs, SelFreqs);
+            [obj.freqs{i}, obj.idfreqs{i}] = intersect(fullFreqs, obj.SelFreqs);
 
-            U = log(sessionOffline1.P);
+            obj.U{i} = log(obj.loader.sessionsDataOffline{i}.P);
 
-            NumWins  = size(U, 1);
-            NumFreqs = size(U, 2);
-            NumChans = size(U, 3);
+            obj.NumWins{i}  = size(obj.U{i}, 1);
+            obj.NumFreqs{i} = size(obj.U{i}, 2);
+            obj.NumChans{i} = size(obj.U{i}, 3);
 
-            Rk = obj.loader.sessionsDataOffline{i}.RkP;
-            Runs = unique(Rk);
+            obj.Rk{i} = obj.loader.sessionsDataOffline{i}.RkP;
+            obj.Runs{i} = unique(obj.Rk{i});
 
-            NumRuns = length(Runs);
+            obj.NumRuns{i} = length(obj.Runs{i});
             
         end
 
         function obj = LabelingData(obj,i)
+            obj.Ck{i} = zeros(obj.NumWins{i}, 1);
+            obj.Tk{i} = zeros(obj.NumWins{i}, 1);
 
-            % 
-            % We consider the intersting period from Cue apperance to end of continuous feedback
-            Ck = zeros(NumWins, 1);
-            Tk = zeros(NumWins, 1);
-
-            for trId = 1:NumTrials
-                cstart = CuePOS(trId);
-                cstop  = CFeedbackPOS(trId) + CFeedbackDUR(trId) - 1;
-                Ck(cstart:cstop) = CueTYP(trId);
-                Tk(cstart:cstop) = trId;
+            for trId = 1:obj.NumTrials{i}
+                cstart = obj.CuePOS{i}(trId);
+                cstop  = obj.CFeedbackPOS{i}(trId) + obj.CFeedbackDUR{i}(trId) - 1;
+                obj.Ck{i}(cstart:cstop) = obj.CueTYP{i}(trId);
+                obj.Tk{i}(cstart:cstop) = trId;
             end
     
         end
@@ -223,23 +250,23 @@ classdef DataProcessing
         
         function obj =  computeFisherScore(obj,i)
 
-            NumClasses = length(data.classId);
+            obj.NumClasses{i} = length(obj.loader.classId);
 
-            FisherScore = nan(NumFreqs, NumChans, NumRuns);
-            FS2 = nan(NumFreqs*NumChans, NumRuns);
-            for rId = 1:NumRuns
-                rindex = Rk == Runs(rId); 
+            obj.FisherScore{i} = nan(obj.NumFreqs{i}, obj.NumChans{i}, obj.NumRuns{i});
+            obj.FS2{i} = nan(obj.NumFreqs{i}*obj.NumChans{i}, obj.NumRuns{i});
+            for rId = 1:obj.NumRuns{i}
+                rindex = obj.Rk{i} == obj.Runs{i}(rId); 
 
-                cmu    = nan(NumFreqs, NumChans, 2);
-                csigma = nan(NumFreqs, NumChans, 2);
+                cmu    = nan(obj.NumFreqs{i}, obj.NumChans{i}, 2);
+                csigma = nan(obj.NumFreqs{i}, obj.NumChans{i}, 2);
 
-                for cId = 1:NumClasses
-                    cindex = rindex & Ck == data.classId(cId);
-                    cmu(:, :, cId) = squeeze(mean(U(cindex, :, :)));
-                    csigma(:, :, cId) = squeeze(std(U(cindex, :, :)));
+                for cId = 1:obj.NumClasses{i}
+                    cindex = rindex & obj.Ck{i} == obj.loader.classId(cId);
+                    cmu(:, :, cId) = squeeze(mean(obj.U{i}(cindex, :, :)));
+                    csigma(:, :, cId) = squeeze(std(obj.U{i}(cindex, :, :)));
                 end
 
-                FisherScore(:, :, rId) = abs(cmu(:, :, 2) - cmu(:, :, 1)) ./ sqrt( ( csigma(:, :, 1).^2 + csigma(:, :, 2).^2 ) );
+                obj.FisherScore{i}(:, :, rId) = abs(cmu(:, :, 2) - cmu(:, :, 1)) ./ sqrt( ( csigma(:, :, 1).^2 + csigma(:, :, 2).^2 ) );
             end
             
         end % ComputeFisherScore

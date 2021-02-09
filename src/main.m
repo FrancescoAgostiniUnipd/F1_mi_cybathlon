@@ -4,15 +4,22 @@ clear all; close all; clc;
 addpath('./Function/');
 addpath('./Util/');
 
-% Setting up env
-datapath = "../datalectures/";
+%% CONFIG PROJECT
+datapath       = "../data/";    % Folder with sessions data
+f              = 4:2:48;        % SelFreqs 
+% Spectrogram params
+ml             = 1;             
+wl             = 0.5;
+ps             = 0.25;                  
+ws             = 0.0625;  
+wc             = 'backward';
 
-% Load Data
-data = DataLoader(datapath);
+%% Load Data
+data        = DataLoader(datapath,f,ml,wl,ps,ws,wc);
 
-% Process Data
-processor = DataProcessing(data);
-processor.sessionsProcessing();
+%% Process Data
+processor   = DataProcessing(data,f);
+
 
 
 %{
