@@ -3,7 +3,9 @@
 clearvars;
 % Adding functions class
 addpath('./Function/');
-
+addpath('./Util/eeglab/sigprocfunc/');
+addpath('./Util/eeglab/adminfunc/');
+addpath('./Util/eeglab/guifunc/');
 %% Load data
 
 % crate constructor
@@ -136,8 +138,8 @@ end
 disp('[proc] + Computing fisher score');
 classId = datas.classId(:);
 runs = Runs(:);
-disp(classId);
-fisherScore = FisherScore(NumFreqs, NumChans,U,Runs,Rk,Ck,classId);
+% disp(classId);
+fisherScore = FisherScore(U,Runs,Rk,Ck,classId);
 %     score = nan(NumFreqs, NumChans, NumRuns);    
 %     NumClasses = length( classId );
 %     NumRuns = length(Runs);
@@ -166,9 +168,24 @@ SelFreqs=[];
 FisherScoretemp=fisherScore;
 for rId = 1:length(OfflineRuns)
     subplot(1, length(OfflineRuns), rId);
-    imagesc(fisherScore(:, :, OfflineRuns(rId))');
+
+    plotFisherScore(fisherScore, NumRuns,freqs,datas.channelLb);
+    % imagesc(fisherScore(:, :, NumRun)');
+    % axis square;
+    % set(gca, 'XTick', 1:NumFreqs);
+    % set(gca, 'XTickLabel', freqs);
+    % set(gca, 'YTick', 1:NumChans);
+    % set(gca, 'YTickLabel', datas.channelLb);
+    % xtickangle(-90);
     
-    % To select the freq and chan with the highest fisher score
+    % title(['Calibration run ' num2str(OfflineRuns(rId))]);
+    
+    climits = cat(2, climits, get(gca, 'CLim'));
+    handles(OfflineRuns(rId)) = gca;
+end
+
+% To select the freq and chan with the highest fisher score
+for rId = 1:unique(Runs)
     A=FisherScoretemp(:,:,OfflineRuns(rId));
     val = 10;
     while(val>0.9)
@@ -182,24 +199,21 @@ for rId = 1:length(OfflineRuns)
             SelFreqs=cat(2,SelFreqs,freqs(row));
         end
     end
-    
-    axis square;
-    set(gca, 'XTick', 1:NumFreqs);
-    set(gca, 'XTickLabel', freqs);
-    set(gca, 'YTick', 1:NumChans);
-    set(gca, 'YTickLabel', datas.channelLb);
-    xtickangle(-90);
-    
-    title(['Calibration run ' num2str(OfflineRuns(rId))]);
-    
-    climits = cat(2, climits, get(gca, 'CLim'));
-    handles(OfflineRuns(rId)) = gca;
 end
 
 
 set(handles, 'CLim', [min(min(climits)) max(max(climits))]);
 
 sgtitle('Fisher score');
+
+disp('Topoplot')
+load('./Util/chanlocs16.mat');
+VisFreq = [11, 12];
+figure;
+topoplot(mean( fisherScore( 11:12, :,1), 1), chanlocs16, 'headrad', 'rim');
+colorbar;
+axis image;
+title(['Frequency band ' num2str(freqs(VisFreq(1))) '-' num2str(freqs(VisFreq(2))) 'Hz']);
 
 %% Features selection
 

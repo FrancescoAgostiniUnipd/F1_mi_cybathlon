@@ -1,6 +1,11 @@
 %% Fisher Scor of a set of runs
+%   PSD,
+%   Runs, Different classes inside PSD to see
+%   Rk  , Sample appartain to Run #
+%   Ck  , Cue is classified 771, 773, 0
+%   classId, 2 classes to see index
 function score = FisherScore(PSD,Runs, Rk,Ck,classId)
-    disp(classId);
+    % disp(classId);
     NumFreqs = size(PSD, 2);
     NumChans = size(PSD, 3);
     NumClasses = length( classId );
