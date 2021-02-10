@@ -25,6 +25,7 @@ classdef DataClassifier
         LabelIdx
         SelChansId
         NumWins
+        fullfreqs
         F
         P
         U
@@ -53,6 +54,7 @@ classdef DataClassifier
             obj.F               = [];
             obj.U               = [];
             obj.P               = [];
+            obj.fullfreqs           = [];
            
             [~, obj.SelChansId] = ismember(obj.SelChans, obj.processor.loader.channelLb);
             
@@ -72,9 +74,12 @@ classdef DataClassifier
                 obj.Ck = cat(1,obj.Ck,obj.processor.Ck{sId});
                 obj.NumWins = obj.NumWins + obj.processor.NumWins{sId};
                 obj.P = cat(1,obj.P,obj.processor.loader.sessionsDataOffline{sId}.P);
+                obj.fullfreqs = cat(1,obj.fullfreqs,obj.processor.loader.sessionsDataOffline{sId}.freqs);
             end
             
-            obj.U = log(obj.P(:, obj.processor.SelFreqs, :));
+            [freqs, idfreqs] = intersect(obj.fullfreqs, obj.processor.SelFreqs);
+            
+            obj.U = log(obj.P(:, freqs, :));
             SelFreqsId=obj.SelFreqs;
             obj.F = nan(obj.NumWins, obj.NumSelFeatures);
             for ftId = 1:obj.NumSelFeatures
