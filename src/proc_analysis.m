@@ -217,3 +217,73 @@ title(['Frequency band ' num2str(freqs(VisFreq(1))) '-' num2str(freqs(VisFreq(2)
 
 %% Features selection
 
+disp('[proc] |- Select features');
+% fprintf('Features: %s \nChannels: %d ',Selchans,SelFreqs);
+disp('Features: ');
+disp(SelChans);
+disp('Channels: ');
+disp(SelFreqs);
+%SelChans = {'C4', 'C4', 'FC2'};
+%SelFreqs = [20 22 22];
+% SelChans = unique(SelChans);
+NumSelFeatures = length(SelChans);
+
+[~, SelChansId] = ismember(SelChans, datas.channelLb);
+[~, SelFreqsId] = ismember(SelFreqs, freqs);
+% SelFreqsId=SelFreqs/2;
+F = nan(NumWins, NumSelFeatures);
+for ftId = 1:NumSelFeatures
+    cfrq  = SelFreqsId(ftId);
+    cchan = SelChansId(ftId);
+    F(:, ftId) = U(:, cfrq, cchan);
+end
+
+%% Classifier Train (LDA or QDA);
+disp('[proc] + Train classifier');
+LabelIdx = Ck == 771 | Ck == 773;
+% Model = fitcdiscr(F(LabelIdx, :), Ck(LabelIdx));
+Model = fitcdiscr(F(LabelIdx, :), Ck(LabelIdx), 'DiscrimType','quadratic');
+
+%% Classifier accuracy on trainset
+
+[Gk, pp] = predict(Model, F);
+
+SSAcc = 100*sum(Gk(LabelIdx) == Ck(LabelIdx))./length(Gk(LabelIdx));
+disp('Model Accuracy:');
+disp( SSAcc);
+
+NumClasses = length(classId);
+SSClAcc = nan(NumClasses, 1);
+for cId = 1:NumClasses
+    cindex = Ck == datas.classId(cId);
+    SSClAcc(cId) = 100*sum(Gk(cindex) == Ck(cindex))./length(Gk(cindex));
+    disp('Model class Accuracy:');
+    disp(SSClAcc(cId));
+end
+
+%% Saving classifier
+disp('[out] + Save classifier');
+filename = 'ah7_20201215_classifier.mat';
+save(filename, 'Model', 'SelChansId', 'SelFreqsId');
+
+%% Visualize classifier
+fig2 = figure;
+subplot(1,3,1);
+choose = [1,3];
+plot_Classifier(Model,F,LabelIdx,Ck,SelChans,SelFreqs,choose);
+subplot(1,3,2);
+choose = [2,3];
+plot_Classifier(Model,F,LabelIdx,Ck,SelChans,SelFreqs,choose);
+subplot(1,3,3);
+choose = [1,2];
+plot_Classifier(Model,F,LabelIdx,Ck,SelChans,SelFreqs,choose);
+% fig2 = figure;
+% h1 = gscatter(F(LabelIdx, 1),F(LabelIdx, 2),Ck(LabelIdx),'rb','ov',[],'off');
+% grid on;
+% xlim([-8 0]);
+% ylim([-8 1.5]);
+% xlabel([SelChans{1} '@' num2str(SelFreqs(1)) 'Hz']);
+% ylabel([SelChans{2} '@' num2str(SelFreqs(2)) 'Hz']);
+% axis square;
+% hold on
+
