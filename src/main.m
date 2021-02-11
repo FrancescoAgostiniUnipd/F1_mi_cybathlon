@@ -451,8 +451,8 @@ LabelIdx = Ck == 771 | Ck == 773;
 [Gk, pp] = predict(Model, F);
 
 SSAcc = 100*sum(Gk(LabelIdx) == Ck(LabelIdx))./length(Gk(LabelIdx));
-Classes = classId;
-NumClasses = length(classId);
+Classes = data.classId;
+NumClasses = length(data.classId);
 SSClAcc = nan(NumClasses, 1);
 for cId = 1:NumClasses
     cindex = Ck == Classes(cId);

@@ -89,7 +89,19 @@ end
 
 t = linspace(0, MinTrialDur*datas.wshift, MinTrialDur);
 
-proc_plotERD_ERS( datas, [7,9,11], t, tCk, session1.freqs, ERD );
+figure;
+chandles = [];
+ChannelSelected =[7,9,11];
+for cId = 1:datas.nclasses
+    climits = nan(2, length(ChannelSelected));
+    for chId = 1:length(ChannelSelected)
+        cdata = mean(ERD(:, :, ChannelSelected(chId), tCk == datas.classId(cId)), 4);
+        subplot(2, 3, (cId - 1)*length(ChannelSelected) + chId);
+        [chandles,climits(:, chId)] = proc_plotERD_ERS( cdata, datas.channelLb{ChannelSelected(chId)}, t, session1.freqs, datas.classLb{cId});
+    end
+    
+end
+set(chandles, 'CLim', [min(min(climits)) max(max(climits))]);
 
 sessionOffline1 = datas.sessionsDataOffline{1};
 %% Apply log to the data

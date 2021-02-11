@@ -1,35 +1,37 @@
 %% Visualization ERD/ERS
-%   To use proc_plotERD_ERS(data, [7,8,9], t,tCk,4:2:48, ERD)
+%   To use:
+% proc_plotERD_ERS(cdata, datas.channelLb{ChannelSelected(chId)}, t, session1.freqs, datas.classLb{cId});
 
-%       -data: Object of DataLoader
+%       -cdata: Data to Plot
+%       -nameChannel: Name of the channel to reppresent
 %       -space: linearspace()
-%       -ChannelSelected: three selected channels
-%       -tCk: type of event (Both Hand 773 or Both Feet 771)
 %       -freqs: frequency of visualization on chart
-%       -ERD: data to visualize
+%       -classLb: Name of class to represent
 
-    function  proc_plotERD_ERS(data, ChannelSelected, space,tCk,freqs, ERD)
-        figure;
+
+    function  [chandles, climits] = proc_plotERD_ERS(cdata, nameChannel, space,freqs,classLb)
+        %tCk, ERD)
+        % figure;
     
         chandles = [];
-        for cId = 1:data.nclasses
+        % for cId = 1:data.nclasses
             
-            climits = nan(2, length(ChannelSelected));
-            for chId = 1:length(ChannelSelected)
-                subplot(2, 3, (cId - 1)*length(ChannelSelected) + chId);
-                cdata = mean(ERD(:, :, ChannelSelected(chId), tCk == data.classId(cId)), 4);
-                imagesc(space, freqs, cdata');
-                set(gca,'YDir','normal');
-                climits(:, chId) = get(gca, 'CLim');
-                chandles = cat(1, chandles, gca);
-                colormap(hot);
-                colorbar;
-                title(['Channel ' data.channelLb{ChannelSelected(chId)} ' | ' data.classLb{cId}]);
-                xlabel('Time [s]');
-                ylabel('Frequency [Hz]');
-                line([1 1],get(gca,'YLim'),'Color',[0 0 0])
-            end
+        %     climits = nan(2, length(ChannelSelected));
+        %     for chId = 1:length(ChannelSelected)
+        %         subplot(2, 3, (cId - 1)*length(ChannelSelected) + chId);
+        % cdata = mean(ERD(:, :, ChannelSelected, tCk == data.classId(cId)), 4);
+        imagesc(space, freqs, cdata');
+        set(gca,'YDir','normal');
+        climits = get(gca, 'CLim');
+        chandles = cat(1, chandles, gca);
+        colormap(hot);
+        colorbar;
+        title(['Channel ' nameChannel ' | ' classLb]);
+        xlabel('Time [s]');
+        ylabel('Frequency [Hz]');
+        line([1 1],get(gca,'YLim'),'Color',[0 0 0])
+        %     end
             
-        end
-        set(chandles, 'CLim', [min(min(climits)) max(max(climits))]);
+        % end
+        % set(chandles, 'CLim', [min(min(climits)) max(max(climits))]);
     end

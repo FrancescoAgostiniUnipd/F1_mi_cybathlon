@@ -4,7 +4,7 @@ Description: Collection of utils and functions userd for load
               and chain .gdf EEG description file on workspace
 
 Authors: Agostini Francesco (francesco.agostini.5@studenti.unipd.it)
-          Deschaux Ophélie   (opheliecandicemarine.deschaux@studenti.unipd.it)
+          Deschaux Ophï¿½lie   (opheliecandicemarine.deschaux@studenti.unipd.it)
           Marcon Francesco   (francesco.marcon.2@studenti.unipd.it)
 
 Version: 0.4
@@ -75,7 +75,7 @@ classdef DataLoader
             sprintf("\n\nStart loading sessions ... \n");
             obj = obj.listSessions();
             % Start loading gdf files
-            %obj = obj.loadSessions();
+            % obj = obj.loadSessions();
             
             
             sprintf("\nAll %d sessions loaded correctly!\n\n",length(obj.sessionsNames));
