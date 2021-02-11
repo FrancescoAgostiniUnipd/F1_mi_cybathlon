@@ -1,4 +1,4 @@
-%%  plot_Classifier(Model, F, LabelIdx, Ck, Channels, Frequences, choose)
+%%  plot_Classifier(Model, F, LabelIdx, Ck, Channels, Frequences, choose, visualizeMu)
 %   Model,  Model
 %   F,      X data insert into the model,
 %   LabelIdx, value of classifier
@@ -6,7 +6,8 @@
 %   Channels, Channels selected
 %   Frequences, Frequences selected,
 %   choose,  dimension of the array to plot
-function plot_Classifier(Model, F, LabelIdx, Ck, Channels, Frequences, choose)
+%   visualizeMu, visualize center
+function plot_Classifier(Model, F, LabelIdx, Ck, Channels, Frequences, choose, visualizeMu)
     % fig2 = figure;
      gscatter(F(LabelIdx, choose(1)),F(LabelIdx, choose(2)),Ck(LabelIdx),'mg','.',[],'off');
     grid on;
@@ -19,7 +20,11 @@ function plot_Classifier(Model, F, LabelIdx, Ck, Channels, Frequences, choose)
     title(['Plot of ' Channels{choose(1)} '@' num2str(Frequences(choose(1))) 'Hz | ' Channels{choose(2)} '@' num2str(Frequences(choose(2))) 'Hz']);
     axis square;
     hold on
-    
+    if visualizeMu
+        gscatter( Model.Mu(1,choose(1)), Model.Mu(1,choose(2)),'r');
+        gscatter( Model.Mu(2,choose(1)), Model.Mu(2,choose(2)),'r');
+    end
+    Model.Mu;
     % Linear
     % K = Model.Coeffs(1,2).Const;
     % L = Model.Coeffs(1,2).Linear;
