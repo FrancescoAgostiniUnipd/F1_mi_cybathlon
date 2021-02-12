@@ -447,7 +447,8 @@ disp('[proc] + Evaluate classifier');
 LabelIdx = Ck == 771 | Ck == 773;
 
 %% Overall classifier accuracy on testset
-
+% Guessed labels
+% pp  = posterior probabilities/ Confidence intervals for responses
 [Gk, pp] = predict(Model, F);
 
 SSAcc = 100*sum(Gk(LabelIdx) == Ck(LabelIdx))./length(Gk(LabelIdx));
@@ -460,6 +461,7 @@ for cId = 1:NumClasses
 end
 
 %% Evidence accumulation
+
 disp('[proc] + Evidence accumulation (exponential smoothing)');
 TrialStart = POS(TYP == 781);
 NumSamples = size(pp, 1);

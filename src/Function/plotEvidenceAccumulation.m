@@ -1,11 +1,29 @@
-function plotEvidenceAccumulation(SelTrial, Tk, Ck, pp, ipp, ValueClasses, NumTrials, Threshold, LbClasses, CueClasses )
+%% function plotEvidenceAccumulation(SelTrial, Tk, Ck, pp, ipp, ValueClasses, NumTrials, Threshold, LbClasses, CueClasses )
+%   SelTrial,   Select Trial to visualize
+%   Tk,         Trial logic vector
+%   Ck,         Cue
+%   pp,         Confidence parameter
+%   ipp,        is parameter of integrated of pp: ipp(sId) = prev_ipp.*alpha + curr_pp.*(1-alpha)
+%   ValueClasses,
+%   NumTrials,  
+%   Threshold,  
+%   LbClasses,  
+%   CueClasses  
+function plotEvidenceAccumulation(SelTrial, Tk, Ck, pp, ipp, CueType, NumTrials, Threshold )
 
     cindex = Tk == SelTrial;
+    CueClasses    = [771 783 773];
 
     [~, ClassIdx] = ismember(unique(Ck(cindex)), CueClasses);
 
+    if ClassIdx == 0
+        ClassIdx =783;
+    end
+
     GreyColor = [150 150 150]/255;
     LineColors = {'b', 'g', 'r'};
+    LbClasses     = {'both feet', 'rest', 'both hands'};
+    ValueClasses  = [1 0.5 0];
     
     hold on;
     
@@ -15,15 +33,15 @@ function plotEvidenceAccumulation(SelTrial, Tk, Ck, pp, ipp, ValueClasses, NumTr
     % Plotting accumulutated evidence
     plot(ipp(cindex), 'k', 'LineWidth', 2);
 
-    % Plotting actual target class
-    yline(ValueClasses(ClassIdx), LineColors{ClassIdx}, 'LineWidth', 5);
-
     % Plotting 0.5 line
     yline(0.5, '--k');
-
+    
     % Plotting thresholds
     yline(Threshold, 'k', 'Th_{1}');
     yline(1-Threshold, 'k', 'Th_{2}');
+    
+    % Plotting actual target class
+    yline(ValueClasses(ClassIdx), LineColors{ClassIdx}, 'LineWidth', 5);
     hold off;
 
     grid on;
@@ -32,6 +50,6 @@ function plotEvidenceAccumulation(SelTrial, Tk, Ck, pp, ipp, ValueClasses, NumTr
     legend('raw prob', 'integrated prob');
     ylabel('probability/control')
     xlabel('sample');
-    title(['Trial ' num2str(SelTrial) '/' num2str(NumTrials) ' - Class ' LbClasses ' (' num2str(CueClasses(ClassIdx)) ')']);
+    title(['Trial ' num2str(SelTrial) '/' num2str(NumTrials) ' - Class ' LbClasses{ClassIdx} ' (' num2str(CueType(SelTrial)) ')']);
 
 end

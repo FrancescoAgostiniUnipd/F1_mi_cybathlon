@@ -281,14 +281,17 @@ save(filename, 'Model', 'SelChansId', 'SelFreqsId');
 %% Visualize classifier
 fig2 = figure;
 subplot(1,3,1);
+visualizeMu = true;
 choose = [1,3];
-plot_Classifier(Model,F,LabelIdx,Ck,SelChans,SelFreqs,choose);
+plot_Classifier(Model,F,LabelIdx,Ck,SelChans,SelFreqs,choose,true);
 subplot(1,3,2);
 choose = [2,3];
-plot_Classifier(Model,F,LabelIdx,Ck,SelChans,SelFreqs,choose);
+plot_Classifier(Model,F,LabelIdx,Ck,SelChans,SelFreqs,choose, visualizeMu);
 subplot(1,3,3);
 choose = [1,2];
-plot_Classifier(Model,F,LabelIdx,Ck,SelChans,SelFreqs,choose);
+plot_Classifier(Model,F,LabelIdx,Ck,SelChans,SelFreqs,choose, visualizeMu);
+
+
 % fig2 = figure;
 % h1 = gscatter(F(LabelIdx, 1),F(LabelIdx, 2),Ck(LabelIdx),'rb','ov',[],'off');
 % grid on;
@@ -298,4 +301,104 @@ plot_Classifier(Model,F,LabelIdx,Ck,SelChans,SelFreqs,choose);
 % ylabel([SelChans{2} '@' num2str(SelFreqs(2)) 'Hz']);
 % axis square;
 % hold on
+
+%% Evidence accumulation
+disp('[proc] + Evidence accumulation (exponential smoothing)');
+TrialStart = POS(TYP == 781);
+NumSamples = size(pp, 1);
+
+ipp = 0.5*ones(size(pp, 1), 1);
+alpha = 0.97;
+
+for sId = 2:NumSamples
+    
+    curr_pp  = pp(sId, 1);
+    prev_ipp = ipp(sId-1);
+    
+    if ismember(sId, TrialStart)
+        ipp(sId) = 1./NumClasses;
+    else
+        ipp(sId) = prev_ipp.*alpha + curr_pp.*(1-alpha);
+    end
+end
+
+
+%% Plot accumulated evidence and raw probabilities
+fig1 = figure;
+
+% CueClasses    = [771 783 773];
+% LineColors = {'b', 'g', 'r'};
+% LbClasses     = {'both feet', 'rest', 'both hands'};
+% ValueClasses  = [1 0.5 0];
+Threshold     = 0.7;
+
+SelTrial = 50;
+
+% Trial 15: good rest
+% Trial 80: bad rest
+% Trial 55: good both hands
+% Trial 58: good both feet
+subplot(1,2,1);
+plotEvidenceAccumulation(SelTrial, Tk, Ck, pp, ipp, CueTYP, NumTrials, Threshold );
+subplot(1,2,2);
+plotEvidenceAccumulation(SelTrial, Tk, Ck, pp, ipp, CueTYP, NumTrials, Threshold );
+% cindex = Tk == SelTrial;
+% [~, ClassIdx] = ismember(unique(Ck(cindex)), CueClasses);
+% GreyColor = [150 150 150]/255;
+% LineColors = {'b', 'g', 'r'};
+% hold on;
+% % Plotting raw probabilities
+% plot(pp(cindex, 1), 'o', 'Color', GreyColor);
+% % Plotting accumulutated evidence
+% plot(ipp(cindex), 'k', 'LineWidth', 2);
+% % Plotting actual target class
+% yline(ValueClasses(ClassIdx), LineColors{ClassIdx}, 'LineWidth', 5);
+% % Plotting 0.5 line
+% yline(0.5, '--k');
+% % Plotting thresholds
+% yline(Threshold, 'k', 'Th_{1}');
+% yline(1-Threshold, 'k', 'Th_{2}');
+% hold off;
+% grid on;
+% ylim([0 1]);
+% xlim([1 sum(cindex)]);
+% legend('raw prob', 'integrated prob');
+% ylabel('probability/control')
+% xlabel('sample');
+% title(['Trial ' num2str(SelTrial) '/' num2str(NumTrials) ' - Class ' LbClasses{ClassIdx} ' (' num2str(CueClasses(ClassIdx)) ')']);
+
+%% Compute performances
+ActualClass = TYP(TYP == 771 | TYP == 773 | TYP == 783);
+Decision = nan(NumTrials, 1);
+
+for trId = 1:NumTrials
+    cstart = CFeedbackPOS(trId);
+    cstop  = CFeedbackPOS(trId) + CFeedbackDUR(trId) - 1;
+    cipp = ipp(cstart:cstop);
+    
+    endpoint = find( (cipp >= Threshold) | (cipp <= 1 - Threshold), 1, 'first' );
+    
+    if(isempty(endpoint))
+        Decision(trId) = 783;
+        continue;
+    end
+    
+    if(cipp(endpoint) >= Threshold)
+        Decision(trId) = 771;
+    elseif (cipp(endpoint) <= Threshold)
+        Decision(trId) = 773;
+    end
+end
+
+% Removing Rest trials
+ActiveTrials = ActualClass ~= 783;
+RestTrials = ActualClass == 783;
+
+PerfActive  = 100 * (sum(ActualClass(ActiveTrials) == Decision(ActiveTrials))./sum(ActiveTrials))
+PerfResting = 100 * (sum(ActualClass(RestTrials) == Decision(RestTrials))./sum(RestTrials))
+
+RejTrials = Decision == 783;
+
+PerfActive_rej = 100 * (sum(ActualClass(ActiveTrials & ~RejTrials) == Decision(ActiveTrials & ~RejTrials))./sum(ActiveTrials & ~RejTrials))
+
 
