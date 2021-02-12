@@ -79,7 +79,7 @@ classdef DataClassifier
             
             [freqs, idfreqs] = intersect(obj.fullfreqs, obj.processor.SelFreqs);
             
-            obj.U = log(obj.P(:, freqs, :));
+            obj.U = log(obj.P(:, idfreqs, :));
             SelFreqsId=obj.SelFreqs;
             obj.F = nan(obj.NumWins, obj.NumSelFeatures);
             for ftId = 1:obj.NumSelFeatures
