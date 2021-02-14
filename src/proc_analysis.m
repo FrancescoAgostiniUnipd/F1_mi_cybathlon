@@ -89,14 +89,14 @@ end
 
 t = linspace(0, MinTrialDur*datas.wshift, MinTrialDur);
 
-figure;
+fig5 = figure;
 chandles = [];
-ChannelSelected =[7,9,11];
+ChannelSelected =[3,5];
 for cId = 1:datas.nclasses
     climits = nan(2, length(ChannelSelected));
     for chId = 1:length(ChannelSelected)
         cdata = mean(ERD(:, :, ChannelSelected(chId), tCk == datas.classId(cId)), 4);
-        subplot(2, 3, (cId - 1)*length(ChannelSelected) + chId);
+        subplot(2, length(ChannelSelected), (cId - 1)*length(ChannelSelected) + chId);
         [chandles,climits(:, chId)] = proc_plotERD_ERS( cdata, datas.channelLb{ChannelSelected(chId)}, t, session1.freqs, datas.classLb{cId});
     end
     
@@ -181,7 +181,7 @@ FisherScoretemp=fisherScore;
 for rId = 1:length(OfflineRuns)
     subplot(1, length(OfflineRuns), rId);
 
-    plotFisherScore(fisherScore, NumRuns,freqs,datas.channelLb);
+    plotFisherScore(fisherScore, rId,freqs,datas.channelLb);
     % imagesc(fisherScore(:, :, NumRun)');
     % axis square;
     % set(gca, 'XTick', 1:NumFreqs);
@@ -200,10 +200,10 @@ end
 for rId = 1:unique(Runs)
     A=FisherScoretemp(:,:,OfflineRuns(rId));
     val = 10;
-    while(val>0.9)
+    while(val>0.5)
         
         [val,idx] = max(A(:));
-        if val>0.9
+        if val>0.5
             [row,col] = ind2sub(size(A),idx);
             A(row,col)=0;
             FisherScoretemp(row,col,:)=0;
@@ -220,9 +220,9 @@ sgtitle('Fisher score');
 
 disp('Topoplot')
 load('./Util/chanlocs16.mat');
-VisFreq = [11, 12];
-figure;
-topoplot(mean( fisherScore( 11:12, :,1), 1), chanlocs16, 'headrad', 'rim');
+VisFreq = [10, 12];
+fig2 = figure;
+topoplot(mean( fisherScore( VisFreq(1):VisFreq(2), :,1), 1), chanlocs16, 'headrad', 'rim');
 colorbar;
 axis image;
 title(['Frequency band ' num2str(freqs(VisFreq(1))) '-' num2str(freqs(VisFreq(2))) 'Hz']);
@@ -275,21 +275,21 @@ end
 
 %% Saving classifier
 disp('[out] + Save classifier');
-filename = 'ah7_20201215_classifier.mat';
+filename = sprintf('%s_classifier.mat', datas.sessionsNames{1});
 save(filename, 'Model', 'SelChansId', 'SelFreqsId');
 
 %% Visualize classifier
-fig2 = figure;
-subplot(1,3,1);
+fig3 = figure;
+% subplot(1,3,1);
 visualizeMu = true;
-choose = [1,3];
-plot_Classifier(Model,F,LabelIdx,Ck,SelChans,SelFreqs,choose,true);
-subplot(1,3,2);
-choose = [2,3];
-plot_Classifier(Model,F,LabelIdx,Ck,SelChans,SelFreqs,choose, visualizeMu);
-subplot(1,3,3);
 choose = [1,2];
 plot_Classifier(Model,F,LabelIdx,Ck,SelChans,SelFreqs,choose, visualizeMu);
+% subplot(1,3,2);
+% choose = [2,3];
+% plot_Classifier(Model,F,LabelIdx,Ck,SelChans,SelFreqs,choose, visualizeMu);
+% subplot(1,3,3);
+% choose = [1,3];
+% plot_Classifier(Model,F,LabelIdx,Ck,SelChans,SelFreqs,choose,true);
 
 
 % fig2 = figure;
@@ -322,52 +322,9 @@ for sId = 2:NumSamples
     end
 end
 
-
-%% Plot accumulated evidence and raw probabilities
-fig1 = figure;
-
-% CueClasses    = [771 783 773];
-% LineColors = {'b', 'g', 'r'};
-% LbClasses     = {'both feet', 'rest', 'both hands'};
-% ValueClasses  = [1 0.5 0];
+%% Compute performances
 Threshold     = 0.7;
 
-SelTrial = 50;
-
-% Trial 15: good rest
-% Trial 80: bad rest
-% Trial 55: good both hands
-% Trial 58: good both feet
-subplot(1,2,1);
-plotEvidenceAccumulation(SelTrial, Tk, Ck, pp, ipp, CueTYP, NumTrials, Threshold );
-subplot(1,2,2);
-plotEvidenceAccumulation(SelTrial, Tk, Ck, pp, ipp, CueTYP, NumTrials, Threshold );
-% cindex = Tk == SelTrial;
-% [~, ClassIdx] = ismember(unique(Ck(cindex)), CueClasses);
-% GreyColor = [150 150 150]/255;
-% LineColors = {'b', 'g', 'r'};
-% hold on;
-% % Plotting raw probabilities
-% plot(pp(cindex, 1), 'o', 'Color', GreyColor);
-% % Plotting accumulutated evidence
-% plot(ipp(cindex), 'k', 'LineWidth', 2);
-% % Plotting actual target class
-% yline(ValueClasses(ClassIdx), LineColors{ClassIdx}, 'LineWidth', 5);
-% % Plotting 0.5 line
-% yline(0.5, '--k');
-% % Plotting thresholds
-% yline(Threshold, 'k', 'Th_{1}');
-% yline(1-Threshold, 'k', 'Th_{2}');
-% hold off;
-% grid on;
-% ylim([0 1]);
-% xlim([1 sum(cindex)]);
-% legend('raw prob', 'integrated prob');
-% ylabel('probability/control')
-% xlabel('sample');
-% title(['Trial ' num2str(SelTrial) '/' num2str(NumTrials) ' - Class ' LbClasses{ClassIdx} ' (' num2str(CueClasses(ClassIdx)) ')']);
-
-%% Compute performances
 ActualClass = TYP(TYP == 771 | TYP == 773 | TYP == 783);
 Decision = nan(NumTrials, 1);
 
@@ -390,15 +347,74 @@ for trId = 1:NumTrials
     end
 end
 
+
+%% Plot accumulated evidence and raw probabilities
+fig4 = figure;
+
+% CueClasses    = [771 783 773];
+% LineColors = {'b', 'g', 'r'};
+% LbClasses     = {'both feet', 'rest', 'both hands'};
+% ValueClasses  = [1 0.5 0];
+
+% SelTrial = 50;
+
+% Trial 15: good rest
+% Trial 80: bad rest
+% Trial 55: good both hands
+% Trial 58: good both feet
+bHands = find(Decision == 773);
+bFeets = find(Decision == 771);
+rest = find(Decision == 783);
+%   Random choose
+%   randperm(length(index), 1)
+subplot(1,3,1);
+plotEvidenceAccumulation(bHands(randperm(length(bHands), 1)), Tk, Ck, pp, ipp, Decision, NumTrials, Threshold );
+subplot(1,3,2);
+plotEvidenceAccumulation(min(rest), Tk, Ck, pp, ipp, Decision, NumTrials, Threshold );
+subplot(1,3,3);
+plotEvidenceAccumulation(bFeets(randperm(length(bFeets), 1)), Tk, Ck, pp, ipp, Decision, NumTrials, Threshold );
+% cindex = Tk == SelTrial;
+% [~, ClassIdx] = ismember(unique(Ck(cindex)), CueClasses);
+% GreyColor = [150 150 150]/255;
+% LineColors = {'b', 'g', 'r'};
+% LineColors = {'b', 'g', 'r'};
+% hold on;
+% % Plotting raw probabilities
+% plot(pp(cindex, 1), 'o', 'Color', GreyColor);
+% % Plotting accumulutated evidence
+% plot(ipp(cindex), 'k', 'LineWidth', 2);
+% % Plotting actual target class
+% yline(ValueClasses(ClassIdx), LineColors{ClassIdx}, 'LineWidth', 5);
+% % Plotting 0.5 line
+% yline(0.5, '--k');
+% % Plotting thresholds
+% yline(Threshold, 'k', 'Th_{1}');
+% yline(1-Threshold, 'k', 'Th_{2}');
+% hold off;
+% grid on;
+% ylim([0 1]);
+% xlim([1 sum(cindex)]);
+% legend('raw prob', 'integrated prob');
+% ylabel('probability/control')
+% xlabel('sample');
+% title(['Trial ' num2str(SelTrial) '/' num2str(NumTrials) ' - Class ' LbClasses{ClassIdx} ' (' num2str(CueClasses(ClassIdx)) ')']);
+
+
 % Removing Rest trials
 ActiveTrials = ActualClass ~= 783;
 RestTrials = ActualClass == 783;
 
-PerfActive  = 100 * (sum(ActualClass(ActiveTrials) == Decision(ActiveTrials))./sum(ActiveTrials))
-PerfResting = 100 * (sum(ActualClass(RestTrials) == Decision(RestTrials))./sum(RestTrials))
+Active = sum(ActualClass(ActiveTrials) == Decision(ActiveTrials));
+PerfActive  = 100 * ( Active )./sum(ActiveTrials);
+% fprintf('Recognise Active: %d on %0.1d\n PerfActive = %d', Active, sum(ActiveTrials),PerfActive);
+fprintf('Recognise Active: %d on %d\n PerfActive = %3.2f\n', Active, sum(ActiveTrials),PerfActive);
+
+PerfResting = 100 * ( Active )./sum(RestTrials);
+fprintf('Recognise Resting: %d on %d\n PerfActive = %3.2f\n', Active, sum(RestTrials),PerfResting);
 
 RejTrials = Decision == 783;
 
-PerfActive_rej = 100 * (sum(ActualClass(ActiveTrials & ~RejTrials) == Decision(ActiveTrials & ~RejTrials))./sum(ActiveTrials & ~RejTrials))
+PerfActive_rej = 100 * (sum(ActualClass(ActiveTrials & ~RejTrials) == Decision(ActiveTrials & ~RejTrials))./sum(ActiveTrials & ~RejTrials));
+fprintf('PerfActive_rej = %3.2f\n',PerfActive_rej);
 
 
