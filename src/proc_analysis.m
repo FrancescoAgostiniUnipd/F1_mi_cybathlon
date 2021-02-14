@@ -1,6 +1,6 @@
 %%Proc Script
 
-clearvars;
+% clearvars;
 % Adding functions class
 addpath('./Function/');
 addpath('./Util/eeglab/sigprocfunc/');
@@ -9,11 +9,12 @@ addpath('./Util/eeglab/guifunc/');
 %% Load data
 
 % crate constructor
-datas = DataLoader;
+% datas = DataLoader;
 % load only folder data
-datas = DataLoaderfolder(datas , [1]);
+SelectFolder = 1;
+datas = DataLoaderfolder(datas , [SelectFolder]);
 %
-session1    =   datas.sessionsDataOffline{1};
+session1    =   datas.sessionsDataOnline{SelectFolder};
 % session2    =   datas.getSessionById(2);
 
  P = session1.P;
@@ -88,8 +89,9 @@ end
 
 
 t = linspace(0, MinTrialDur*datas.wshift, MinTrialDur);
+fig =[];
 
-fig5 = figure;
+fig{1} = figure;
 chandles = [];
 ChannelSelected =[3,5];
 for cId = 1:datas.nclasses
@@ -103,7 +105,7 @@ for cId = 1:datas.nclasses
 end
 set(chandles, 'CLim', [min(min(climits)) max(max(climits))]);
 
-sessionOffline1 = datas.sessionsDataOffline{1};
+sessionOffline1 = datas.sessionsDataOnline{SelectFolder};
 %% Apply log to the data
 SelFreqs = 4:2:48;
 fullFreqs = sessionOffline1.freqs;
@@ -174,7 +176,7 @@ disp('[proc] |- Visualizing fisher score');
 OfflineRuns = 1:NumRuns;
 climits = [];
 handles = nan(NumRuns, 1);
-fig1 = figure;
+fig{2} = figure;
 SelChans={};
 SelFreqs=[];
 FisherScoretemp=fisherScore;
@@ -221,7 +223,7 @@ sgtitle('Fisher score');
 disp('Topoplot')
 load('./Util/chanlocs16.mat');
 VisFreq = [10, 12];
-fig2 = figure;
+fig{3} = figure;
 topoplot(mean( fisherScore( VisFreq(1):VisFreq(2), :,1), 1), chanlocs16, 'headrad', 'rim');
 colorbar;
 axis image;
@@ -273,13 +275,9 @@ for cId = 1:NumClasses
     disp(SSClAcc(cId));
 end
 
-%% Saving classifier
-disp('[out] + Save classifier');
-filename = sprintf('%s_classifier.mat', datas.sessionsNames{1});
-save(filename, 'Model', 'SelChansId', 'SelFreqsId');
 
 %% Visualize classifier
-fig3 = figure;
+fig{4} = figure;
 % subplot(1,3,1);
 visualizeMu = true;
 choose = [1,2];
@@ -349,7 +347,7 @@ end
 
 
 %% Plot accumulated evidence and raw probabilities
-fig4 = figure;
+fig{5} = figure;
 
 % CueClasses    = [771 783 773];
 % LineColors = {'b', 'g', 'r'};
@@ -417,4 +415,17 @@ RejTrials = Decision == 783;
 PerfActive_rej = 100 * (sum(ActualClass(ActiveTrials & ~RejTrials) == Decision(ActiveTrials & ~RejTrials))./sum(ActiveTrials & ~RejTrials));
 fprintf('PerfActive_rej = %3.2f\n',PerfActive_rej);
 
+for i = 1:5
+    % imageName = sprintf('../image/session%d/Offline%d.png',SelectFolder, i);
+    imageName = sprintf('../image/session%d/Online%d.png',SelectFolder, i);
+    saveas(fig{i},imageName);
+end
+
+%% Saving Classifier & evalue Parameters
+disp('[out] + Save classifier');
+% filename = sprintf('../elaborated/%s_classifierOffline.mat', datas.sessionsNames{SelectFolder});
+filename = sprintf('../elaborated/%s_classifierOnline.mat', datas.sessionsNames{SelectFolder});
+Accuracy = SSAcc;
+ClassAccuracy = SSClAcc;
+save(filename, 'Model', 'Accuracy', 'ClassAccuracy','PerfActive','PerfResting','PerfActive_rej', 'SelChansId', 'SelFreqsId');
 
