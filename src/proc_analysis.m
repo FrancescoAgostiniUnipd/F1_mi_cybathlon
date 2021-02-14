@@ -11,7 +11,7 @@ addpath('./Util/eeglab/guifunc/');
 % crate constructor
 % datas = DataLoader;
 % load only folder data
-SelectFolder = 1;
+% SelectFolder = 2;
 datas = DataLoaderfolder(datas , [SelectFolder]);
 %
 session1    =   datas.sessionsDataOnline{SelectFolder};
@@ -199,7 +199,7 @@ for rId = 1:length(OfflineRuns)
 end
 
 % To select the freq and chan with the highest fisher score
-for rId = 1:unique(Runs)
+for rId = 1:length(Runs)
     A=FisherScoretemp(:,:,OfflineRuns(rId));
     val = 10;
     while(val>0.5)
@@ -362,15 +362,15 @@ fig{5} = figure;
 % Trial 58: good both feet
 bHands = find(Decision == 773);
 bFeets = find(Decision == 771);
-rest = find(Decision == 783);
+% rest = find(Decision == 783);
 %   Random choose
 %   randperm(length(index), 1)
-subplot(1,3,1);
+subplot(1,2,1);
 plotEvidenceAccumulation(bHands(randperm(length(bHands), 1)), Tk, Ck, pp, ipp, Decision, NumTrials, Threshold );
-subplot(1,3,2);
-plotEvidenceAccumulation(min(rest), Tk, Ck, pp, ipp, Decision, NumTrials, Threshold );
-subplot(1,3,3);
+subplot(1,2,2);
+% plotEvidenceAccumulation(min(rest), Tk, Ck, pp, ipp, Decision, NumTrials, Threshold );
 plotEvidenceAccumulation(bFeets(randperm(length(bFeets), 1)), Tk, Ck, pp, ipp, Decision, NumTrials, Threshold );
+% subplot(1,3,3);
 % cindex = Tk == SelTrial;
 % [~, ClassIdx] = ismember(unique(Ck(cindex)), CueClasses);
 % GreyColor = [150 150 150]/255;
