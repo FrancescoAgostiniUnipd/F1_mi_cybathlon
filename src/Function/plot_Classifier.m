@@ -21,8 +21,8 @@ function plot_Classifier(Model, F, LabelIdx, Ck, Channels, Frequences, choose, v
     axis square;
     hold on
     if visualizeMu
-        gscatter( Model.Mu(1,choose(1)), Model.Mu(1,choose(2)),'r');
-        gscatter( Model.Mu(2,choose(1)), Model.Mu(2,choose(2)),'r');
+        gscatter( Model.Mu(:,choose(1)), Model.Mu(:,choose(2)),Model.Mu(:,1),'r');
+        % gscatter( Model.Mu(2,choose(1)), Model.Mu(2,choose(2)),'r');
     end
     Model.Mu;
     % Linear
@@ -41,6 +41,6 @@ function plot_Classifier(Model, F, LabelIdx, Ck, Channels, Frequences, choose, v
     h2.Color = 'r';
     h2.LineWidth = 2;
     h2.DisplayName = 'Boundary between boht hands & both feet';
-    legend('both feet', 'both hands', 'Boundary');
+    legend('both feet', 'both hands', 'Boundary','Centers');
     hold off;
 end

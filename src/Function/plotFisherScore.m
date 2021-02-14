@@ -13,6 +13,6 @@ function  plotFisherScore(fisherScore, NumRuns,freqs,channelLb)
     set(gca, 'YTick', 1:NumChans);
     set(gca, 'YTickLabel', channelLb);
     xtickangle(-90);
-    % colorbar;
+    colorbar;
     title(['Calibration run ' num2str(NumRuns)]);
 end

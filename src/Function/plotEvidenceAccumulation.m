@@ -14,7 +14,7 @@ function plotEvidenceAccumulation(SelTrial, Tk, Ck, pp, ipp, CueType, NumTrials,
     cindex = Tk == SelTrial;
     CueClasses    = [771 783 773];
 
-    [~, ClassIdx] = ismember(unique(Ck(cindex)), CueClasses);
+    [~, ClassIdx] = ismember(CueType(SelTrial), CueClasses);
 
     if ClassIdx == 0
         ClassIdx =783;
@@ -32,22 +32,22 @@ function plotEvidenceAccumulation(SelTrial, Tk, Ck, pp, ipp, CueType, NumTrials,
 
     % Plotting accumulutated evidence
     plot(ipp(cindex), 'k', 'LineWidth', 2);
-
-    % Plotting 0.5 line
-    yline(0.5, '--k');
+    
+    % Plotting actual target class
+    yline(ValueClasses(ClassIdx), LineColors{ClassIdx}, 'LineWidth', 5);
     
     % Plotting thresholds
     yline(Threshold, 'k', 'Th_{1}');
     yline(1-Threshold, 'k', 'Th_{2}');
-    
-    % Plotting actual target class
-    yline(ValueClasses(ClassIdx), LineColors{ClassIdx}, 'LineWidth', 5);
+
+    % Plotting 0.5 line
+    yline(0.5, '--k');
     hold off;
 
     grid on;
     ylim([0 1]);
     xlim([1 sum(cindex)]);
-    legend('raw prob', 'integrated prob');
+    legend('raw prob', 'integrated prob', 'Actual Target','Thr 1','Thr 2');
     ylabel('probability/control')
     xlabel('sample');
     title(['Trial ' num2str(SelTrial) '/' num2str(NumTrials) ' - Class ' LbClasses{ClassIdx} ' (' num2str(CueType(SelTrial)) ')']);
