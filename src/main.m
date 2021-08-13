@@ -17,17 +17,19 @@ wc             = 'backward';
 sc = {'C4', 'C4', 'FC2'};
 sf = [20 22 22];
 
+%% Create data presenter instance
+presenter = DataPresenter();
 
 %% Load Data
-data        = DataLoader(datapath,f,ml,wl,ps,ws,wc);
+data        = DataLoader(datapath,f,ml,wl,ps,ws,wc,presenter);
 
 %% Process Data
-processor   = DataProcessing(data,f);
+processor   = DataProcessing(data,f,presenter);
 
 %% Classifier for data
-classifier  = DataClassifier(processor,sc,sf);
+%classifier  = DataClassifier(processor,sc,sf);
 
-classifier.loadFromProcessor()
+%classifier.loadFromProcessor()
 
 
 

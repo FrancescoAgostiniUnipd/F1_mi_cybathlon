@@ -46,12 +46,15 @@ classdef DataLoader
         allRuns                % overall runs in session
         offlineRuns            % offline runs in session
         onlineRuns             % online runs in session
+        
+        % presenter instance
+        Presenter
     end
     
     %% Class constructor and loader method
     methods
         %% Constructor
-        function obj = DataLoader(path,f,ml,wl,ps,ws,wc)
+        function obj = DataLoader(path,f,ml,wl,ps,ws,wc,pres)
             % Setting up env
             obj.datapath            = convertStringsToChars(path);
             obj.datasample          = 512;
@@ -81,6 +84,8 @@ classdef DataLoader
             obj.allRuns             = [];
             obj.offlineRuns         = [];
             obj.onlineRuns          = [];
+            
+            obj.Presenter = pres;
             
             % Start loading data names
             sprintf("\n\nStart loading sessions ... \n");
@@ -141,7 +146,7 @@ classdef DataLoader
             dfolders = sessions([sessions(:).isdir]);
             dfolders = dfolders(~ismember({dfolders(:).name},{'.','..'}));
             
-            obj.nsessions = length(dfolders);
+            obj.nsessions =  length(dfolders);
             
             for i = 1 : obj.nsessions
               obj.sessionsNames{i} = dfolders(i).name;
@@ -157,6 +162,7 @@ classdef DataLoader
             for i = 1 : length(obj.sessionsPaths)
                 fprintf("Loading session #%d %s \n",i,obj.sessionsPaths{i});
                 obj = obj.loadSession(obj.sessionsPaths{i},i);
+                obj.Presenter.PresentRawData(obj.sessionsPaths{i},obj.sessionsDataOffline{i}.P,obj.sessionsData{i}.TYP,obj.sessionsData{i}.DUR,obj.sessionsData{i}.POS,obj.sessionsData{i}.Rk,obj.sessionsData{i}.Mk);
             end
         end
         

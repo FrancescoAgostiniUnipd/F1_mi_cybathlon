@@ -59,11 +59,13 @@ classdef DataProcessing
         % Attributes for Fisher score
         FisherScore
         FS2
+        % presenter instance
+        Presenter
     end
     
     methods
         %% Constructor
-        function obj = DataProcessing(dataloader,f)
+        function obj = DataProcessing(dataloader,f,pres)
             % Sessions data loading and param
             obj.loader                  = dataloader;
             obj.SelFreqs                = f;
@@ -110,8 +112,11 @@ classdef DataProcessing
             obj.FisherScore             = []; 
             obj.FS2                     = [];
             
+            obj.Presenter = pres;
+            
             % Process session from dataloader
             obj = obj.sessionsProcessing();
+            
         end
         
         %% Sessions Iterator
@@ -177,6 +182,7 @@ classdef DataProcessing
 
             % extraction
             obj.MinTrialDur{i} = min(obj.TrialStop{i} - obj.TrialStart{i});
+            fprintf("i = %d | MTD{i} = %f | TStart{i} = %f | TStop{i} = %f \n",i,obj.MinTrialDur{i},obj.TrialStop{i},obj.TrialStart{i});
             obj.TrialData{i}   = nan(obj.MinTrialDur{i}, obj.NFreqs{i}, obj.NChannels{i}, obj.NumTrials{i});
             obj.tCk{i} = zeros(obj.NumTrials{i}, 1);
             for trId = 1:obj.NumTrials{i}
@@ -243,7 +249,7 @@ classdef DataProcessing
                 obj.Ck{i}(cstart:cstop) = obj.CueTYP{i}(trId);
                 obj.Tk{i}(cstart:cstop) = trId;
             end
-    
+            
         end
         
         %% Fisher Score
@@ -268,6 +274,11 @@ classdef DataProcessing
 
                 obj.FisherScore{i}(:, :, rId) = abs(cmu(:, :, 2) - cmu(:, :, 1)) ./ sqrt( ( csigma(:, :, 1).^2 + csigma(:, :, 2).^2 ) );
             end
+            
+            % print fisher score debug
+            fprintf("Processing FS %d\n",1);
+            obj.Presenter.PresentErdErs(obj.loader.sessionsNames{i}, obj.MinTrialDur{i}, obj.loader.wshift, 0 ,obj.NumClasses{i},obj.ERD{i},obj.loader.classId,obj.freqs{i},obj.loader.channelLb,obj.loader.classLb,obj.tCk{i});
+            obj.Presenter.PresentFisherScore(obj.loader.sessionsNames{i}, obj.NumRuns{i},obj.NumFreqs{i}, obj.NumChans{i}, obj.loader.channelLb, obj.freqs{i}, obj.FisherScore{i})
             
         end % ComputeFisherScore
         
