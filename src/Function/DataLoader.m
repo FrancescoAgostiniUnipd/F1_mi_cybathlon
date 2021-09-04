@@ -321,6 +321,7 @@ classdef DataLoader
                 
             end % session files iteration
             
+            fprintf("Session %d - OF= %d | ON= %d  = \n",n,obj.offlineRuns{n},obj.onlineRuns{n});
         end % load session function
         
         %% Getter for sessions number

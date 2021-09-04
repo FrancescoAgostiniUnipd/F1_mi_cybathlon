@@ -276,10 +276,14 @@ classdef DataProcessing
             end
             
             % print fisher score debug
-            fprintf("Processing FS %d\n",1);
-            obj.Presenter.PresentErdErs(obj.loader.sessionsNames{i}, obj.MinTrialDur{i}, obj.loader.wshift, 0 ,obj.NumClasses{i},obj.ERD{i},obj.loader.classId,obj.freqs{i},obj.loader.channelLb,obj.loader.classLb,obj.tCk{i});
-            obj.Presenter.PresentFisherScore(obj.loader.sessionsNames{i}, obj.NumRuns{i},obj.NumFreqs{i}, obj.NumChans{i}, obj.loader.channelLb, obj.freqs{i}, obj.FisherScore{i})
+            fprintf("Processing FS %d - OR = \n",i,obj.loader.offlineRuns{i});
             
+            if (obj.loader.offlineRuns{i} == 0)
+                fprintf("No offline to visualize for session %d\n",i);
+            else
+                obj.Presenter.PresentErdErs(obj.loader.sessionsNames{i}, obj.MinTrialDur{i}, obj.loader.wshift, 0 ,obj.NumClasses{i},obj.ERD{i},obj.loader.classId,obj.freqs{i},obj.loader.channelLb,obj.loader.classLb,obj.tCk{i});
+                obj.Presenter.PresentFisherScore(obj.loader.sessionsNames{i}, obj.NumRuns{i},obj.NumFreqs{i}, obj.NumChans{i}, obj.loader.channelLb, obj.freqs{i}, obj.FisherScore{i})
+            end
         end % ComputeFisherScore
         
     

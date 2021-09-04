@@ -136,6 +136,41 @@ classdef DataPresenter
         end
         
         
+        function obj = PresentClassifier(obj,F,Ck,Model,LabelIdx,SelChans,SelFreqs)
+           %% Visualize classifier
+            fig2 = figure;
+            h1 = gscatter(F(LabelIdx, 1),F(LabelIdx, 2),Ck(LabelIdx),'kb','ov^',[],'off');
+            grid on;
+            xlim([-8 0]);
+            ylim([-8 1.5]);
+            xlabel([SelChans{1} '@' num2str(SelFreqs(1)) 'Hz']);
+            ylabel([SelChans{2} '@' num2str(SelFreqs(2)) 'Hz']);
+            axis square;
+            hold on
+
+            % Linear
+            % K = Model.Coeffs(1,2).Const;
+            % L = Model.Coeffs(1,2).Linear;
+            % f = @(x1,x2) K + L(1)*x1 + L(2)*x2;
+
+            % Quadratic
+            K = Model.Coeffs(1,2).Const;
+            L = Model.Coeffs(1,2).Linear;
+            Q = Model.Coeffs(1,2).Quadratic;
+            f = @(x1,x2) K + L(1)*x1 + L(2)*x2 + Q(1,1)*x1.^2 + ...
+                (Q(1,2)+Q(2,1))*x1.*x2 + Q(2,2)*x2.^2;
+
+            h2 = fimplicit(f);
+            h2.Color = 'r';
+            h2.LineWidth = 2;
+            h2.DisplayName = 'Boundary between boht hands & both feet';
+            legend('both feet', 'both hands', 'Boundary');
+            hold off; 
+            
+            
+        end    
+        
+        
         
     
     end % methods (Static)

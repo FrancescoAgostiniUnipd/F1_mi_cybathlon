@@ -27,7 +27,7 @@ data        = DataLoader(datapath,f,ml,wl,ps,ws,wc,presenter);
 processor   = DataProcessing(data,f,presenter);
 
 %% Classifier for data
-%classifier  = DataClassifier(processor,sc,sf);
+classifier  = DataClassifier(processor,sc,sf,presenter);
 
 %classifier.loadFromProcessor()
 
