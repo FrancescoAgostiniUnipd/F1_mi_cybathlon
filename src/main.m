@@ -4,31 +4,9 @@ clear all; close all; clc;
 addpath('./Function/');
 addpath('./Util/');
 
-%% CONFIG PROJECT
-datapath       = "../data/";    % Folder with sessions data
-f              = 4:2:48;        % SelFreqs 
-% Spectrogram params
-ml             = 1;             
-wl             = 0.5;
-ps             = 0.25;                  
-ws             = 0.0625;  
-wc             = 'backward';
-% Classifier training parameters
-sc = {'C4','C4','FC2'};
-sf = [20 22 22];
 
-%% Create data presenter instance
-%presenter = DataPresenter();
 
-%% Load Data
-%data        = DataLoader(datapath,f,ml,wl,ps,ws,wc,presenter);
-
-%% Process Data
-%processor   = DataProcessing(data,f,presenter);
-
-%% Classifier for data
-%classifier  = DataClassifier(processor,sc,sf,presenter);
-
+%{
 %% EEG processing - Train classifier
 %
 %% Implementation steps:
@@ -47,7 +25,7 @@ sf = [20 22 22];
 %% General information
 clearvars; clc;
 fprintf("Loading Biosig v3.7.2...\n");
-            addpath('./Util/biosig4octmat-3.7.2/biosig/t200_FileAccess','./Util/biosig4octmat-3.7.2/biosig/t210_Events','./Util/biosig4octmat-3.7.2/biosig/t250_ArtifactPreProcessingQualityControl','./Util/biosig4octmat-3.7.2/biosig/t300_FeatureExtraction','./Util/biosig4octmat-3.7.2/biosig/t310_ERDSMaps','./Util/biosig4octmat-3.7.2/biosig/t320_Nirs','./Util/biosig4octmat-3.7.2/biosig/t330_StimFit','./Util/biosig4octmat-3.7.2/biosig/t400_Classification','./Util/biosig4octmat-3.7.2/biosig/t450_MultipleTestStatistic','./Util/biosig4octmat-3.7.2/biosig/t490_EvaluationCriteria','./Util/biosig4octmat-3.7.2/biosig/t500_Visualization','./Util/biosig4octmat-3.7.2/biosig/t501_VisualizeCoupling');
+addpath('./Util/biosig4octmat-3.7.2/biosig/t200_FileAccess','./Util/biosig4octmat-3.7.2/biosig/t210_Events','./Util/biosig4octmat-3.7.2/biosig/t250_ArtifactPreProcessingQualityControl','./Util/biosig4octmat-3.7.2/biosig/t300_FeatureExtraction','./Util/biosig4octmat-3.7.2/biosig/t310_ERDSMaps','./Util/biosig4octmat-3.7.2/biosig/t320_Nirs','./Util/biosig4octmat-3.7.2/biosig/t330_StimFit','./Util/biosig4octmat-3.7.2/biosig/t400_Classification','./Util/biosig4octmat-3.7.2/biosig/t450_MultipleTestStatistic','./Util/biosig4octmat-3.7.2/biosig/t490_EvaluationCriteria','./Util/biosig4octmat-3.7.2/biosig/t500_Visualization','./Util/biosig4octmat-3.7.2/biosig/t501_VisualizeCoupling');
 
 datapath   = '../data/';
 channelLb  = {'Fz', 'FC3', 'FC1', 'FCz', 'FC2', 'FC4', 'C3', 'C1', 'Cz', 'C2', 'C4', 'CP3', 'CP1', 'CPz', 'CP2', 'CP4'};
@@ -66,7 +44,10 @@ selfreqs   = 4:2:96;
 winconv = 'backward'; 
 
 
+%GDFfile = fullfile(datapath, 'ah7.20170613.161402.offline.mi.mi_bhbf.gdf');
+%GDFfile = fullfile(datapath, 'ah7.20170613.162331.offline.mi.mi_bhbf.gdf');
 GDFfile = fullfile(datapath, 'ah7.20170613.162934.offline.mi.mi_bhbf.gdf');
+
 
 %% Loading and concatenate GDF file
 disp(['[io] - Loading GDF file : ' GDFfile]);
@@ -86,6 +67,7 @@ disp('[proc] |- Computing spectrogram');
 %% Selecting desired frequencies
 [freqs, idfreqs] = intersect(freqgrid, selfreqs);
 P = P(:, idfreqs, :);
+event = h.EVENT;
 
 %% Extracting events
 disp('[proc] |- Extract and convert the events');
@@ -192,12 +174,25 @@ for cId = 1:nclasses
 end
 set(chandles, 'CLim', [min(min(climits)) max(max(climits))]);
 
+%save('ah7.20170613.161402.offline.mi.mi_bhbf.mat');
+%save('ah7.20170613.162331.offline.mi.mi_bhbf.mat');
 save('ah7.20170613.162934.offline.mi.mi_bhbf.mat');
+%}
 
 
-%{
 
-clearvars; clc;
+
+
+
+
+
+
+
+
+
+
+
+%clearvars; clc;
 
 channelLb  = {'Fz', 'FC3', 'FC1', 'FCz', 'FC2', 'FC4', 'C3', 'C1', 'Cz', 'C2', 'C4', 'CP3', 'CP1', 'CPz', 'CP2', 'CP4'};
 channelId  = 1:length(channelLb);
@@ -227,7 +222,7 @@ for fId = 1:nfiles
     cdata = load(cfilename);
     
     % Extract the current PSD
-    cpsd = cdata.psd;
+    cpsd = cdata.P;
     
     % Extract the current events
     cevents = cdata.events;
@@ -364,20 +359,20 @@ Model = fitcdiscr(F(LabelIdx, :), Ck(LabelIdx), 'DiscrimType','quadratic');
 
 %% Classifier accuracy on trainset
 
-[Gk, pp] = predict(Model, F);
+%[Gk, pp] = predict(Model, F);
 
-SSAcc = 100*sum(Gk(LabelIdx) == Ck(LabelIdx))./length(Gk(LabelIdx));
+%SSAcc = 100*sum(Gk(LabelIdx) == Ck(LabelIdx))./length(Gk(LabelIdx));
 
-SSClAcc = nan(NumClasses, 1);
-for cId = 1:NumClasses
-    cindex = Ck == Classes(cId);
-    SSClAcc(cId) = 100*sum(Gk(cindex) == Ck(cindex))./length(Gk(cindex));
-end
+%SSClAcc = nan(NumClasses, 1);
+%for cId = 1:NumClasses
+%    cindex = Ck == Classes(cId);
+%    SSClAcc(cId) = 100*sum(Gk(cindex) == Ck(cindex))./length(Gk(cindex));
+%end
 
 %% Saving classifier
-disp('[out] + Save classifier');
-filename = 'ah7_20201215_classifier.mat';
-save(filename, 'Model', 'SelChansId', 'SelFreqsId');
+%disp('[out] + Save classifier');
+%filename = 'ah7_20201215_classifier.mat';
+%save(filename, 'Model', 'SelChansId', 'SelFreqsId');
 
 %% Visualize classifier
 fig2 = figure;
@@ -409,11 +404,71 @@ h2.DisplayName = 'Boundary between boht hands & both feet';
 legend('both feet', 'both hands', 'Boundary');
 hold off;
 
+%% CONFIG PROJECT
+datapath       = "../data/";    % Folder with sessions data
+f              = 4:2:48;        % SelFreqs 
+% Spectrogram params
+ml             = 1;             
+wl             = 0.5;
+ps             = 0.25;                  
+ws             = 0.0625;  
+wc             = 'backward';
+% Classifier training parameters
+sc = {'C4','C4','FC2'};
+sf = [20 22 22];
+
+sc1 = {'C1', 'Cz', 'Cz'};
+sf1 = [12 24 22];
+
+%% Create data presenter instance
+presenter = DataPresenter();
+
+%% Load Data
+data        = DataLoader(datapath,f,ml,wl,ps,ws,wc,presenter);
+
+%% Process Data
+processor   = DataProcessing(data,f,presenter,P);
+
+%% Classifier for data
+%classifier  = DataClassifier(processor,sc1,sf1,presenter);
+classifier  = DataClassifier(processor,sc1,sf1,presenter,SelChans,channelLb,SelFreqs,freqs,U,Ck,NumWins);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 %classifier.loadFromProcessor()
 
-%}
+
 
 %{
 %% Example how to get sessions data and names from loader

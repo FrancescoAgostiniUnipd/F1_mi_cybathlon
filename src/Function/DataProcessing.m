@@ -61,11 +61,14 @@ classdef DataProcessing
         FS2
         % presenter instance
         Presenter
+        ForceP
     end
     
     methods
         %% Constructor
-        function obj = DataProcessing(dataloader,f,pres)
+        function obj = DataProcessing(dataloader,f,pres,forcep)
+            obj.ForceP = forcep;
+            
             % Sessions data loading and param
             obj.loader                  = dataloader;
             obj.SelFreqs                = f;
@@ -148,9 +151,9 @@ classdef DataProcessing
             obj.NChannels{i} = size(obj.loader.sessionsDataOffline{i}.P, 3);
             obj.CFeedbackPOS{i} = obj.loader.sessionsDataOffline{i}.POS(obj.loader.sessionsDataOffline{i}.TYP == 781);
             obj.CFeedbackDUR{i} = obj.loader.sessionsDataOffline{i}.DUR(obj.loader.sessionsDataOffline{i}.TYP == 781);
-            obj.CuePOS{i} = obj.loader.sessionsDataOffline{i}.POS(obj.loader.sessionsDataOffline{i}.TYP == 771 | obj.loader.sessionsDataOffline{i}.TYP == 773 );
-            obj.CueDUR{i} = obj.loader.sessionsDataOffline{i}.DUR(obj.loader.sessionsDataOffline{i}.TYP == 771 | obj.loader.sessionsDataOffline{i}.TYP == 773 );
-            obj.CueTYP{i} = obj.loader.sessionsDataOffline{i}.TYP(obj.loader.sessionsDataOffline{i}.TYP == 771 | obj.loader.sessionsDataOffline{i}.TYP == 773);
+            obj.CuePOS{i} = obj.loader.sessionsDataOffline{i}.POS(obj.loader.sessionsDataOffline{i}.TYP == 771 | obj.loader.sessionsDataOffline{i}.TYP == 773 | obj.loader.sessionsDataOffline{i}.TYP == 783 );
+            obj.CueDUR{i} = obj.loader.sessionsDataOffline{i}.DUR(obj.loader.sessionsDataOffline{i}.TYP == 771 | obj.loader.sessionsDataOffline{i}.TYP == 773 | obj.loader.sessionsDataOffline{i}.TYP == 783 );
+            obj.CueTYP{i} = obj.loader.sessionsDataOffline{i}.TYP(obj.loader.sessionsDataOffline{i}.TYP == 771 | obj.loader.sessionsDataOffline{i}.TYP == 773 | obj.loader.sessionsDataOffline{i}.TYP == 783 );
             obj.FixPOS{i} = obj.loader.sessionsDataOffline{i}.POS(obj.loader.sessionsDataOffline{i}.TYP == 786);
             obj.FixDUR{i} = obj.loader.sessionsDataOffline{i}.DUR(obj.loader.sessionsDataOffline{i}.TYP == 786);
             obj.FixTYP{i} = obj.loader.sessionsDataOffline{i}.TYP(obj.loader.sessionsDataOffline{i}.TYP == 786);
@@ -227,7 +230,10 @@ classdef DataProcessing
             [obj.freqs{i}, obj.idfreqs{i}] = intersect(fullFreqs, obj.SelFreqs);
 
             obj.U{i} = log(obj.loader.sessionsDataOffline{i}.P(:, obj.idfreqs{i}, :));
-
+            %obj.U{i} = log(obj.ForceP(:, obj.idfreqs{i}, :));
+            
+            
+            
             obj.NumWins{i}  = size(obj.U{i}, 1);
             obj.NumFreqs{i} = size(obj.U{i}, 2);
             obj.NumChans{i} = size(obj.U{i}, 3);
@@ -281,7 +287,7 @@ classdef DataProcessing
                 %fprintf("No offline to visualize for session %d\n",i);
             else
                 %obj.Presenter.PresentErdErs(obj.loader.sessionsNames{i}, obj.MinTrialDur{i}, obj.loader.wshift, 0 ,obj.NumClasses{i},obj.ERD{i},obj.loader.classId,obj.freqs{i},obj.loader.channelLb,obj.loader.classLb,obj.tCk{i});
-                %obj.Presenter.PresentFisherScore(obj.loader.sessionsNames{i}, obj.NumRuns{i},obj.NumFreqs{i}, obj.NumChans{i}, obj.loader.channelLb, obj.freqs{i}, obj.FisherScore{i})
+                obj.Presenter.PresentFisherScore(obj.loader.sessionsNames{i}, obj.NumRuns{i},obj.NumFreqs{i}, obj.NumChans{i}, obj.loader.channelLb, obj.freqs{i}, obj.FisherScore{i})
             end
         end % ComputeFisherScore
         
