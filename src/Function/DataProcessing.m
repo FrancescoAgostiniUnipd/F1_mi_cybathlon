@@ -182,7 +182,7 @@ classdef DataProcessing
 
             % extraction
             obj.MinTrialDur{i} = min(obj.TrialStop{i} - obj.TrialStart{i});
-            fprintf("i = %d | MTD{i} = %f | TStart{i} = %f | TStop{i} = %f \n",i,obj.MinTrialDur{i},obj.TrialStop{i},obj.TrialStart{i});
+            %fprintf("i = %d | MTD{i} = %f | TStart{i} = %f | TStop{i} = %f \n",i,obj.MinTrialDur{i},obj.TrialStop{i},obj.TrialStart{i});
             obj.TrialData{i}   = nan(obj.MinTrialDur{i}, obj.NFreqs{i}, obj.NChannels{i}, obj.NumTrials{i});
             obj.tCk{i} = zeros(obj.NumTrials{i}, 1);
             for trId = 1:obj.NumTrials{i}
@@ -226,7 +226,7 @@ classdef DataProcessing
             fullFreqs = obj.loader.sessionsDataOffline{i}.freqs;
             [obj.freqs{i}, obj.idfreqs{i}] = intersect(fullFreqs, obj.SelFreqs);
 
-            obj.U{i} = log(obj.loader.sessionsDataOffline{i}.P);
+            obj.U{i} = log(obj.loader.sessionsDataOffline{i}.P(:, obj.idfreqs{i}, :));
 
             obj.NumWins{i}  = size(obj.U{i}, 1);
             obj.NumFreqs{i} = size(obj.U{i}, 2);
@@ -276,13 +276,12 @@ classdef DataProcessing
             end
             
             % print fisher score debug
-            fprintf("Processing FS %d - OR = \n",i,obj.loader.offlineRuns{i});
             
             if (obj.loader.offlineRuns{i} == 0)
-                fprintf("No offline to visualize for session %d\n",i);
+                %fprintf("No offline to visualize for session %d\n",i);
             else
-                obj.Presenter.PresentErdErs(obj.loader.sessionsNames{i}, obj.MinTrialDur{i}, obj.loader.wshift, 0 ,obj.NumClasses{i},obj.ERD{i},obj.loader.classId,obj.freqs{i},obj.loader.channelLb,obj.loader.classLb,obj.tCk{i});
-                obj.Presenter.PresentFisherScore(obj.loader.sessionsNames{i}, obj.NumRuns{i},obj.NumFreqs{i}, obj.NumChans{i}, obj.loader.channelLb, obj.freqs{i}, obj.FisherScore{i})
+                %obj.Presenter.PresentErdErs(obj.loader.sessionsNames{i}, obj.MinTrialDur{i}, obj.loader.wshift, 0 ,obj.NumClasses{i},obj.ERD{i},obj.loader.classId,obj.freqs{i},obj.loader.channelLb,obj.loader.classLb,obj.tCk{i});
+                %obj.Presenter.PresentFisherScore(obj.loader.sessionsNames{i}, obj.NumRuns{i},obj.NumFreqs{i}, obj.NumChans{i}, obj.loader.channelLb, obj.freqs{i}, obj.FisherScore{i})
             end
         end % ComputeFisherScore
         

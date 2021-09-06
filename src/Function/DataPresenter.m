@@ -136,7 +136,7 @@ classdef DataPresenter
         end
         
         
-        function obj = PresentClassifier(obj,F,Ck,Model,LabelIdx,SelChans,SelFreqs)
+        function obj = PresentClassifier(obj,name,F,Ck,Model,LabelIdx,SelChans,SelFreqs)
            %% Visualize classifier
             fig2 = figure;
             h1 = gscatter(F(LabelIdx, 1),F(LabelIdx, 2),Ck(LabelIdx),'kb','ov^',[],'off');
@@ -166,9 +166,30 @@ classdef DataPresenter
             h2.DisplayName = 'Boundary between boht hands & both feet';
             legend('both feet', 'both hands', 'Boundary');
             hold off; 
+            sgtitle(name);
             
             
-        end    
+        end  
+        
+        function obj = PresentAccumulation(obj,POS,TYP,pp,NumClasses)
+            TrialStart = POS(TYP == 781);
+            NumSamples = size(pp, 1);
+
+            ipp = 0.5*ones(size(pp, 1), 1);
+            alpha = 0.97;
+
+            for sId = 2:NumSamples
+
+                curr_pp  = pp(sId, 1);
+                prev_ipp = ipp(sId-1);
+
+                if ismember(sId, TrialStart)
+                    ipp(sId) = 1./NumClasses;
+                else
+                    ipp(sId) = prev_ipp.*alpha + curr_pp.*(1-alpha);
+                end
+            end
+        end
         
         
         

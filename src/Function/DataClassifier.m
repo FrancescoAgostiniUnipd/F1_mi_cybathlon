@@ -23,13 +23,9 @@ classdef DataClassifier
         NumSelFeatures
         LabelIdx
         SelChansId
+        SelFreqsId
         % Single session data for single model
-        Ck
-        NumWins
-        fullfreqs
         F
-        P
-        U
         % Model members
         Models
         
@@ -62,12 +58,11 @@ classdef DataClassifier
             obj.SelChans        = c;
             obj.SelFreqs        = f;
             obj.NumSelFeatures  = length(c);
-            obj.Ck              = [];
-            obj.NumWins         = [];
+            
+            obj.SelChansId      = [];
+            obj.SelFreqsId      = [];
+            
             obj.F               = [];
-            obj.U               = [];
-            obj.P               = [];
-            obj.fullfreqs       = [];
             obj.LabelIdx        = [];
             
             obj.CkTotal         = [];
@@ -84,7 +79,6 @@ classdef DataClassifier
             obj.SSClAcc             = [];
             
             obj.Presenter       = pres;
-            [~, obj.SelChansId] = ismember(obj.SelChans, obj.processor.loader.channelLb);
             
             obj = obj.loadFromProcessor();
         end
@@ -92,70 +86,51 @@ classdef DataClassifier
         function obj = loadFromProcessor(obj)
             obj = obj.datasetCreator();
             obj = obj.createModel();
-            obj = obj.computeTrainsetAccuracy();
-            obj = obj.saveClassifier();
+            %obj = obj.computeTrainsetAccuracy();
+            %obj = obj.saveClassifier();
         end
         
         function obj = datasetCreator(obj)
-            % Chain Ck from all session in DataProcessor
+            % Session iterator
             for sId=1:obj.processor.loader.nsessions    
-                
-                
+                % Check presence of offline data for trainset creation
                 if (obj.processor.loader.offlineRuns{sId} == 0)
-                    fprintf("No offline to visualize for session %d\n",sId);
+                    fprintf("No offline data for training in session %d\n",sId);
                 else
-                    obj.CkTotal = cat(1,obj.CkTotal,obj.processor.Ck{sId});
-                    obj.NumWinsTotal = obj.NumWinsTotal + obj.processor.NumWins{sId};
-
-                    obj.Ck{sId} = obj.processor.Ck{sId};
-                    obj.NumWins{sId} = obj.processor.NumWins{sId};
+                    [~, tmpSelChansId] = ismember(obj.SelChans, obj.processor.loader.channelLb);
+                    [~, tmpFreqsId] = ismember(obj.SelFreqs, obj.processor.loader.sessionsDataOffline{sId}.freqs);                    
+                    obj.F{sId} = nan(obj.processor.NumWins{sId}, obj.NumSelFeatures);
+                    disp('SESSION');
+                    disp(sId);
+                    disp('selChans');
+                    disp(tmpSelChansId);
+                    disp('selFreqs')
+                    disp(tmpFreqsId);
                     
-                    
-                    obj.P{sId} = obj.processor.loader.sessionsDataOffline{sId}.P;
-                    obj.fullfreqs{sId} = obj.processor.loader.sessionsDataOffline{sId}.freqs;
-                    obj.PTotal = cat(1,obj.PTotal,obj.processor.loader.sessionsDataOffline{sId}.P);
-                    obj.fullfreqsTotal = cat(1,obj.fullfreqsTotal,obj.processor.loader.sessionsDataOffline{sId}.freqs);
-                    
-                    luOLD  = length(obj.processor.U{sId});
-                    luNEW = length(obj.fullfreqs);
-                    
-                    
-                    %[~, idfreqs] = intersect(obj.fullfreqs, obj.processor.SelFreqs);
-            
-                    %obj.U = log(obj.P(:, idfreqs, :));
-                    
-                    
-                    
-                    SelFreqsId=obj.SelFreqs;
-                    obj.FTotal = nan(obj.NumWinsTotal, obj.NumSelFeatures);
-                    obj.F{sId} = nan(obj.NumWins{sId}, obj.NumSelFeatures);
+                    % Iterate selected features
                     for ftId = 1:obj.NumSelFeatures
-                        cfrq  = SelFreqsId(ftId);
-                        cchan = obj.SelChansId(ftId);
+                        cfrq  = tmpSelChansId(ftId);
+                        cchan = tmpFreqsId(ftId);
                         obj.F{sId}(:, ftId) = obj.processor.U{sId}(:, cfrq, cchan);
                     end
-
-                    % Create dataset LabelIdx
-                    obj.LabelIdx{sId} = obj.Ck{sId} == 771 | obj.Ck{sId} == 773;
-                
-                
-                end
-                
-                
-                
-            end
-            
-            
+                    
+                    % Create dataset Labels
+                    obj.LabelIdx{sId} = obj.processor.Ck{sId} == 771 | obj.processor.Ck{sId} == 773;
+                end         
+            end      
         end
         
         function obj = createModel(obj)
+            % Session iterator
             for sId=1:obj.processor.loader.nsessions 
+                % Check presence of offline data for trainset creation
                 if (obj.processor.loader.offlineRuns{sId} == 0)
-                    fprintf("No offline to visualize for session %d\n",sId);
+                    fprintf("No offline data for training in session %d\n",sId);
                 else
-                    fprintf("Training model %d\n",sId);
-                    obj.Models{sId} = fitcdiscr(obj.F{sId}(obj.LabelIdx{sId}, :), obj.Ck{sId}(obj.LabelIdx{sId}), 'DiscrimType','quadratic');
-                    obj.Presenter.PresentClassifier(obj.F{sId},obj.Ck{sId},obj.Models{sId},obj.LabelIdx{sId},obj.SelChans,obj.SelFreqs)
+                    % Train model
+                    obj.Models{sId} = fitcdiscr(obj.F{sId}(obj.LabelIdx{sId}, :), obj.processor.Ck{sId}(obj.LabelIdx{sId}), 'DiscrimType','quadratic');
+                    % Plot model output
+                    obj.Presenter.PresentClassifier(obj.processor.loader.sessionsNames{sId},obj.F{sId},obj.processor.Ck{sId},obj.Models{sId},obj.LabelIdx{sId},obj.SelChans,obj.SelFreqs)
                 end
             end
             %obj.Model = fitcdiscr(obj.F(obj.LabelIdx, :), obj.Ck(obj.LabelIdx), 'DiscrimType','quadratic');
@@ -184,7 +159,7 @@ classdef DataClassifier
         
         function obj = saveClassifier(obj)
             for sId=1:obj.processor.loader.nsessions 
-                save(sId, 'obj.Model', 'obj.SelChansId', 'obj.SelFreqsId');
+                %save(sId, 'obj.Model', 'obj.SelChansId', 'obj.SelFreqsId');
             end
         end
         

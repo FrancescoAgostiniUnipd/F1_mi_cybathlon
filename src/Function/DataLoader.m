@@ -162,7 +162,12 @@ classdef DataLoader
             for i = 1 : length(obj.sessionsPaths)
                 fprintf("Loading session #%d %s \n",i,obj.sessionsPaths{i});
                 obj = obj.loadSession(obj.sessionsPaths{i},i);
-                obj.Presenter.PresentRawData(obj.sessionsPaths{i},obj.sessionsDataOffline{i}.P,obj.sessionsData{i}.TYP,obj.sessionsData{i}.DUR,obj.sessionsData{i}.POS,obj.sessionsData{i}.Rk,obj.sessionsData{i}.Mk);
+                if (obj.offlineRuns{i} == 0)
+                    fprintf("No offline to visualize for session %d\n",i);
+                else
+                    obj.Presenter.PresentRawData(obj.sessionsPaths{i},obj.sessionsDataOffline{i}.P,obj.sessionsData{i}.TYP,obj.sessionsData{i}.DUR,obj.sessionsData{i}.POS,obj.sessionsData{i}.Rk,obj.sessionsData{i}.Mk);
+                end
+               
             end
         end
         
