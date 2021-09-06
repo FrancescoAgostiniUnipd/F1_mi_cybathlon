@@ -66,8 +66,8 @@ classdef DataProcessing
     
     methods
         %% Constructor
-        function obj = DataProcessing(dataloader,f,pres,forcep)
-            obj.ForceP = forcep;
+        function obj = DataProcessing(dataloader,f,pres)%,forcep)
+            %obj.ForceP = forcep;
             
             % Sessions data loading and param
             obj.loader                  = dataloader;
