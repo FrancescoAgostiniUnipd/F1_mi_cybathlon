@@ -4,6 +4,35 @@ clear all; close all; clc;
 addpath('./Function/');
 addpath('./Util/');
 
+%% CONFIG PROJECT
+datapath       = "../data/";    % Folder with sessions data
+f              = 4:2:48;        % SelFreqs 
+% Spectrogram params
+ml             = 1;             
+wl             = 0.5;
+ps             = 0.25;                  
+ws             = 0.0625;  
+wc             = 'backward';
+% Classifier training parameters
+sc = {'C4','FC2'};
+sf = [22 22];
+
+sc1 = {'C1', 'Cz', 'Cz'};
+sf1 = [12 24 22];
+
+%% Create data presenter instance
+presenter = DataPresenter();
+
+%% Load Data
+data        = DataLoader(datapath,f,ml,wl,ps,ws,wc,presenter);
+
+%% Process Data
+processor   = DataProcessing(data,f,presenter);
+
+%% Classifier for data
+%classifier  = DataClassifier(processor,sc1,sf1,presenter);
+classifier  = DataClassifier(processor,sc,sf,presenter);%,SelChans,channelLb,SelFreqs,freqs,U,Ck,NumWins);
+
 
 
 %{
@@ -404,35 +433,6 @@ h2.DisplayName = 'Boundary between boht hands & both feet';
 legend('both feet', 'both hands', 'Boundary');
 hold off;
 %}
-%% CONFIG PROJECT
-datapath       = "../data/";    % Folder with sessions data
-f              = 4:2:48;        % SelFreqs 
-% Spectrogram params
-ml             = 1;             
-wl             = 0.5;
-ps             = 0.25;                  
-ws             = 0.0625;  
-wc             = 'backward';
-% Classifier training parameters
-sc = {'C4','FC2'};
-sf = [22 22];
-
-sc1 = {'C1', 'Cz', 'Cz'};
-sf1 = [12 24 22];
-
-%% Create data presenter instance
-presenter = DataPresenter();
-
-%% Load Data
-data        = DataLoader(datapath,f,ml,wl,ps,ws,wc,presenter);
-
-%% Process Data
-processor   = DataProcessing(data,f,presenter);
-
-%% Classifier for data
-%classifier  = DataClassifier(processor,sc1,sf1,presenter);
-classifier  = DataClassifier(processor,sc,sf,presenter);%,SelChans,channelLb,SelFreqs,freqs,U,Ck,NumWins);
-
 
 
 

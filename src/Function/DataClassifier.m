@@ -19,7 +19,9 @@ classdef DataClassifier
         processor
         % parameters for classifier train
         SelChans
+        SelChansId
         SelFreqs
+        SelFreqsId
         NumSelFeatures
         LabelIdx
         % Single session data for single model
@@ -46,26 +48,12 @@ classdef DataClassifier
         % Visualization Class
         Presenter
         
-        %o_SelChans
-        %o_ChannelLb
-        %o_SelFreqs
-        %o_freqs
-        %o_U
-        %o_Ck
-        %o_NumWins
     end
     
     methods
         function obj = DataClassifier(p,c,f,pres)%,po_SelChans,po_ChannelLb,po_SelFreqs,po_freqs,po_U,po_Ck,po_NumWins)
             %DATACLASSIFIER Construct an instance of this class (l,p)
             %instances of dataloader and dataprocessor
-            %obj.o_SelChans = po_SelChans;
-            %obj.o_ChannelLb = po_ChannelLb;
-            %obj.o_SelFreqs = po_SelFreqs;
-            %obj.o_freqs = po_freqs;
-            %obj.o_U = po_U;
-            %obj.o_Ck = po_Ck;
-            %obj.o_NumWins = po_NumWins;
             
             
             obj.processor       = p;
@@ -73,6 +61,9 @@ classdef DataClassifier
             obj.SelChans        = c;
             obj.SelFreqs        = f;
             obj.NumSelFeatures  = length(c);
+            
+            obj.SelChansId      = [];
+            obj.SelFreqsId      = [];
             
             obj.F               = [];
             obj.LabelIdx        = [];
@@ -98,8 +89,8 @@ classdef DataClassifier
         function obj = loadFromProcessor(obj)
             obj = obj.datasetCreator();
             obj = obj.createModel();
-            %obj = obj.computeTrainsetAccuracy();
-            %obj = obj.saveClassifier();
+            obj = obj.computeTrainsetAccuracy();
+            obj = obj.saveClassifier();
         end
         
         function obj = datasetCreator(obj)
@@ -109,30 +100,20 @@ classdef DataClassifier
                 if (obj.processor.loader.offlineRuns{sId} == 0)
                     fprintf("No offline data for training in session %d\n",sId);
                 else
-                    %[~, tmpSelChansId] = ismember(obj.SelChans, obj.processor.loader.channelLb);
-                    %[~, tmpFreqsId] = ismember(obj.SelFreqs, obj.processor.loader.sessionsDataOffline{sId}.freqs);                    
-                    %Ck = obj.processor.Ck{sId};
-
                     [~, SelChansId] = ismember(obj.SelChans, obj.processor.loader.channelLb);
                     [~, SelFreqsId] = ismember(obj.SelFreqs, obj.processor.loader.sessionsDataOffline{sId}.freqs);
 
-                    %obj.F{sId} = nan(obj.processor.NumWins{sId}, obj.NumSelFeatures);
+                    
                     obj.F{sId} = nan(obj.processor.NumWins{sId}, obj.NumSelFeatures);
+                    % Iterate selected features
                     for ftId = 1:obj.NumSelFeatures
                         cfrq  = SelFreqsId(ftId);
                         cchan = SelChansId(ftId);
                         obj.F{sId}(:, ftId) = obj.processor.U{sId}(:, cfrq, cchan);
                     end
-                    
-                    % Iterate selected features
-                    %for ftId = 1:obj.NumSelFeatures
-                        %cfrq  = tmpSelChansId(ftId);
-                        %cchan = tmpFreqsId(ftId);
-                        %obj.F{sId}(:, ftId) = obj.processor.U{sId}(:, cfrq, cchan);
-                    %end
-                    
+                    obj.SelChansId{sId} = SelChansId;
+                    obj.SelFreqsId{sId} = SelFreqsId;
                     % Create dataset Labels
-                    %obj.LabelIdx{sId} = obj.processor.Ck{sId} == 771 | obj.processor.Ck{sId} == 773;
                     obj.LabelIdx{sId} = obj.processor.Ck{sId} == 771 | obj.processor.Ck{sId} == 773;
                     
                 end         
@@ -148,21 +129,6 @@ classdef DataClassifier
                 else
                     obj.Models{sId} = fitcdiscr(obj.F{sId}(obj.LabelIdx{sId}, :), obj.processor.Ck{sId}(obj.LabelIdx{sId}), 'DiscrimType','quadratic');
                     obj.Presenter.PresentClassifier(obj.processor.loader.sessionsNames{sId},obj.F{sId},obj.processor.Ck{sId},obj.Models{sId},obj.LabelIdx{sId},obj.SelChans,obj.SelFreqs);
-                    % Train model
-                    %obj.Models{sId} = fitcdiscr(obj.F{sId}(obj.LabelIdx{sId}, :), obj.processor.Ck{sId}(obj.LabelIdx{sId}), 'DiscrimType','quadratic');
-                    %obj.Models{sId} = fitcdiscr(obj.F{sId}(obj.LabelIdx{sId}, :), obj.o_Ck(obj.LabelIdx{sId}), 'DiscrimType','quadratic');
-                    % Plot model output
-                    %obj.Presenter.PresentClassifier(obj.processor.loader.sessionsNames{sId},obj.F{sId},obj.processor.Ck{sId},obj.Models{sId},obj.LabelIdx{sId},obj.SelChans,obj.SelFreqs)
-                    %fig2 = figure;
-                    %h1 = gscatter(obj.F{sId}(obj.LabelIdx{sId}, 1),obj.F{sId}(obj.LabelIdx{sId}, 2),obj.o_Ck(obj.LabelIdx{sId}),'kb','ov^',[],'off');
-                    %grid on;
-                    %xlim([-8 0]);
-                    %ylim([-8 1.5]);
-                    %xlabel([obj.o_SelChans{1} '@' num2str(obj.o_SelFreqs(1)) 'Hz']);
-                    %ylabel([obj.o_SelChans{2} '@' num2str(obj.o_SelFreqs(2)) 'Hz']);
-                    %axis square;
-                    %sgtitle(obj.processor.loader.sessionsNames{sId});
-                    %hold on
                 end
             end
             %obj.Model = fitcdiscr(obj.F(obj.LabelIdx, :), obj.Ck(obj.LabelIdx), 'DiscrimType','quadratic');
@@ -177,12 +143,12 @@ classdef DataClassifier
                     NumClasses = length(obj.processor.loader.classId);
                     [obj.Gk{sId}, obj.pp{sId}] = predict(obj.Models{sId}, obj.F{sId});
 
-                    obj.SSAcc{sId} = 100*sum(obj.Gk{sId}(obj.LabelIdx{sId}) == obj.Ck{sId}(obj.LabelIdx{sId}))./length(obj.Gk{sId}(obj.LabelIdx{sId}));
+                    obj.SSAcc{sId} = 100*sum(obj.Gk{sId}(obj.LabelIdx{sId}) == obj.processor.Ck{sId}(obj.LabelIdx{sId}))./length(obj.Gk{sId}(obj.LabelIdx{sId}));
 
                     obj.SSClAcc{sId} = nan(NumClasses, 1);
                     for cId = 1:NumClasses
-                        cindex = obj.Ck{sId} == obj.processor.loader.classId(cId);
-                        obj.SSClAcc{sId}(cId) = 100*sum(obj.Gk{sId}(cindex) == obj.Ck{sId}(cindex))./length(obj.Gk{sId}(cindex));
+                        cindex = obj.processor.Ck{sId} == obj.processor.loader.classId(cId);
+                        obj.SSClAcc{sId}(cId) = 100*sum(obj.Gk{sId}(cindex) == obj.processor.Ck{sId}(cindex))./length(obj.Gk{sId}(cindex));
                     end
                 end
                 
@@ -190,8 +156,15 @@ classdef DataClassifier
         end
         
         function obj = saveClassifier(obj)
-            for sId=1:obj.processor.loader.nsessions 
-                %save(sId, 'obj.Model', 'obj.SelChansId', 'obj.SelFreqsId');
+            for sId=1:obj.processor.loader.nsessions
+                if (obj.processor.loader.offlineRuns{sId} == 0)
+                    fprintf("No offline to visualize for session %d\n",sId);
+                else
+                    Model = obj.Models{sId};
+                    SelChansId = obj.SelChansId{sId};
+                    SelFreqsId = obj.SelFreqsId{sId};
+                    save(obj.processor.loader.sessionsNames{sId}, 'Model', 'SelChansId', 'SelFreqsId');
+                end
             end
         end
         
