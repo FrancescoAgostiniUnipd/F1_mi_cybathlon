@@ -171,24 +171,56 @@ classdef DataPresenter
             
         end  
         
-        function obj = PresentAccumulation(obj,POS,TYP,pp,NumClasses)
-            TrialStart = POS(TYP == 781);
-            NumSamples = size(pp, 1);
+        
+        function obj = PresentAccumulatedEvidence(obj,name,Tk,Ck,pp,ipp,NumTrials)
+            %% Plot accumulated evidence and raw probabilities
+            fig1 = figure;
 
-            ipp = 0.5*ones(size(pp, 1), 1);
-            alpha = 0.97;
+            CueClasses    = [771 783 773];
+            LbClasses     = {'both feet', 'rest', 'both hands'};
+            ValueClasses  = [1 0.5 0];
+            Threshold     = 0.7;
 
-            for sId = 2:NumSamples
+            SelTrial = 50;
 
-                curr_pp  = pp(sId, 1);
-                prev_ipp = ipp(sId-1);
+            % Trial 15: good rest
+            % Trial 80: bad rest
+            % Trial 55: good both hands
+            % Trial 58: good both feet
 
-                if ismember(sId, TrialStart)
-                    ipp(sId) = 1./NumClasses;
-                else
-                    ipp(sId) = prev_ipp.*alpha + curr_pp.*(1-alpha);
-                end
-            end
+            cindex = Tk == SelTrial;
+            [~, ClassIdx] = ismember(unique(Ck(cindex)), CueClasses);
+
+            GreyColor = [150 150 150]/255;
+            LineColors = {'b', 'g', 'r'};
+
+            hold on;
+            % Plotting raw probabilities
+            plot(pp(cindex, 1), 'o', 'Color', GreyColor);
+
+            % Plotting accumulutated evidence
+            plot(ipp(cindex), 'k', 'LineWidth', 2);
+
+            % Plotting actual target class
+            yline(ValueClasses(ClassIdx), LineColors{ClassIdx}, 'LineWidth', 5);
+
+            % Plotting 0.5 line
+            yline(0.5, '--k');
+
+            % Plotting thresholds
+            yline(Threshold, 'k', 'Th_{1}');
+            yline(1-Threshold, 'k', 'Th_{2}');
+            hold off;
+
+            grid on;
+            ylim([0 1]);
+            xlim([1 sum(cindex)]);
+            legend('raw prob', 'integrated prob');
+            ylabel('probability/control')
+            xlabel('sample');
+            title(['Trial ' num2str(SelTrial) '/' num2str(NumTrials) ' - Class ' LbClasses{ClassIdx} ' (' num2str(CueClasses(ClassIdx)) ')']);
+
+            sgtitle(name);
         end
         
         

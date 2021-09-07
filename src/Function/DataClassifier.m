@@ -24,8 +24,10 @@ classdef DataClassifier
         SelFreqsId
         NumSelFeatures
         LabelIdx
+        LabelIdxOnline
         % Single session data for single model
         F
+        FOnline
         % Model members
         Models
         
@@ -40,10 +42,15 @@ classdef DataClassifier
         Model
         
         % Accuracy Member
-        SSAcc
-        pp
-        Gk
-        SSClAcc
+        SSAccTrain
+        ppTrain
+        GkTrain
+        SSClAccTrain
+        
+        SSAccTest
+        ppTest
+        GkTest
+        SSClAccTest
         
         % Visualization Class
         Presenter
@@ -67,6 +74,9 @@ classdef DataClassifier
             
             obj.F               = [];
             obj.LabelIdx        = [];
+            obj.FOnline               = [];
+            obj.LabelIdxOnline        = [];
+            
             
             obj.CkTotal         = [];
             obj.NumWinsTotal    = [];
@@ -76,10 +86,15 @@ classdef DataClassifier
             obj.fullfreqsTotal  = [];
             
             % Accuracy member initialization
-            obj.SSAcc               = []; 
-            obj.pp                  = [];
-            obj.Gk                  = [];
-            obj.SSClAcc             = [];
+            obj.SSAccTrain               = []; 
+            obj.ppTrain                  = [];
+            obj.GkTrain                  = [];
+            obj.SSClAccTrain             = [];
+            
+            obj.SSAccTest               = []; 
+            obj.ppTest                  = [];
+            obj.GkTest                  = [];
+            obj.SSClAccTest             = [];
             
             obj.Presenter       = pres;
             
@@ -90,6 +105,8 @@ classdef DataClassifier
             obj = obj.datasetCreator();
             obj = obj.createModel();
             obj = obj.computeTrainsetAccuracy();
+            obj = obj.computeTestsetAccuracy();
+            obj = obj.computeEvidenceAccumulation();
             obj = obj.saveClassifier();
         end
         
@@ -97,9 +114,8 @@ classdef DataClassifier
             % Session iterator
             for sId=1:obj.processor.loader.nsessions    
                 % Check presence of offline data for trainset creation
-                if (obj.processor.loader.offlineRuns{sId} == 0)
-                    fprintf("No offline data for training in session %d\n",sId);
-                else
+                if (obj.processor.loader.offlineRuns{sId} > 0)
+                    % IF EXISTS ONLINE RUNS CREATE TRAIN SET
                     [~, SelChansId] = ismember(obj.SelChans, obj.processor.loader.channelLb);
                     [~, SelFreqsId] = ismember(obj.SelFreqs, obj.processor.loader.sessionsDataOffline{sId}.freqs);
 
@@ -116,7 +132,21 @@ classdef DataClassifier
                     % Create dataset Labels
                     obj.LabelIdx{sId} = obj.processor.Ck{sId} == 771 | obj.processor.Ck{sId} == 773;
                     
-                end         
+                end  
+                
+                if (obj.processor.loader.onlineRuns{sId} > 0)
+                    % IF EXISTS ONLINE RUNS CREATE TEST SET
+                    [~, SelChansId] = ismember(obj.SelChans, obj.processor.loader.channelLb);
+                    [~, SelFreqsId] = ismember(obj.SelFreqs, obj.processor.loader.sessionsDataOnline{sId}.freqs);
+                    
+                    obj.FOnline{sId} = nan(obj.processor.NumWinsOnline{sId}, obj.NumSelFeatures);
+                    for ftId = 1:obj.NumSelFeatures
+                        cfrq  = SelFreqsId(ftId);
+                        cchan = SelChansId(ftId);
+                        obj.FOnline{sId}(:, ftId) = obj.processor.UOnline{sId}(:, cfrq, cchan);
+                    end
+                    obj.LabelIdxOnline{sId} = obj.processor.CkOnline{sId} == 771 | obj.processor.CkOnline{sId} == 773;
+                end
             end      
         end
         
@@ -124,9 +154,7 @@ classdef DataClassifier
             % Session iterator
             for sId=1:obj.processor.loader.nsessions 
                 % Check presence of offline data for trainset creation
-                if (obj.processor.loader.offlineRuns{sId} == 0)
-                    fprintf("No offline data for training in session %d\n",sId);
-                else
+                if (obj.processor.loader.offlineRuns{sId} > 0)
                     obj.Models{sId} = fitcdiscr(obj.F{sId}(obj.LabelIdx{sId}, :), obj.processor.Ck{sId}(obj.LabelIdx{sId}), 'DiscrimType','quadratic');
                     obj.Presenter.PresentClassifier(obj.processor.loader.sessionsNames{sId},obj.F{sId},obj.processor.Ck{sId},obj.Models{sId},obj.LabelIdx{sId},obj.SelChans,obj.SelFreqs);
                 end
@@ -136,20 +164,70 @@ classdef DataClassifier
         
         function obj = computeTrainsetAccuracy(obj)
             for sId=1:obj.processor.loader.nsessions 
-                if (obj.processor.loader.offlineRuns{sId} == 0)
-                    fprintf("No offline to visualize for session %d\n",sId);
-                else
+                if (obj.processor.loader.offlineRuns{sId} > 0)
                     fprintf("Computing accuracy model %d\n",sId);
                     NumClasses = length(obj.processor.loader.classId);
-                    [obj.Gk{sId}, obj.pp{sId}] = predict(obj.Models{sId}, obj.F{sId});
+                    [obj.GkTrain{sId}, obj.ppTrain{sId}] = predict(obj.Models{sId}, obj.F{sId});
 
-                    obj.SSAcc{sId} = 100*sum(obj.Gk{sId}(obj.LabelIdx{sId}) == obj.processor.Ck{sId}(obj.LabelIdx{sId}))./length(obj.Gk{sId}(obj.LabelIdx{sId}));
+                    obj.SSAccTrain{sId} = 100*sum(obj.GkTrain{sId}(obj.LabelIdx{sId}) == obj.processor.Ck{sId}(obj.LabelIdx{sId}))./length(obj.GkTrain{sId}(obj.LabelIdx{sId}));
 
-                    obj.SSClAcc{sId} = nan(NumClasses, 1);
+                    obj.SSClAccTrain{sId} = nan(NumClasses, 1);
                     for cId = 1:NumClasses
                         cindex = obj.processor.Ck{sId} == obj.processor.loader.classId(cId);
-                        obj.SSClAcc{sId}(cId) = 100*sum(obj.Gk{sId}(cindex) == obj.processor.Ck{sId}(cindex))./length(obj.Gk{sId}(cindex));
+                        obj.SSClAccTrain{sId}(cId) = 100*sum(obj.GkTrain{sId}(cindex) == obj.processor.Ck{sId}(cindex))./length(obj.GkTrain{sId}(cindex));
                     end
+                end
+                
+            end
+        end
+        
+        function obj = computeTestsetAccuracy(obj)
+            for sId=1:obj.processor.loader.nsessions 
+                if (obj.processor.loader.offlineRuns{sId} > 0 && obj.processor.loader.onlineRuns{sId} > 0) % else no model to test
+                    fprintf("Testing accuracy model %d\n",sId);
+                    NumClasses = length(obj.processor.loader.classId);
+                    [obj.GkTest{sId}, obj.ppTest{sId}] = predict(obj.Models{sId}, obj.FOnline{sId});
+                    
+                    %a = obj.GkTest{sId};
+                    %b = obj.LabelIdxOnline{sId};
+                    %c = 
+                    
+                    obj.SSAccTest{sId} = 100*sum(obj.GkTest{sId}(obj.LabelIdxOnline{sId}) == obj.processor.CkOnline{sId}(obj.LabelIdxOnline{sId}))./length(obj.GkTest{sId}(obj.LabelIdxOnline{sId}));
+                                        
+                    obj.SSClAccTest{sId} = nan(NumClasses, 1);
+                    for cId = 1:NumClasses
+                        cindex = obj.processor.CkOnline{sId} == obj.processor.loader.classId(cId);
+                        obj.SSClAccTest{sId}(cId) = 100*sum(obj.GkTest{sId}(cindex) == obj.processor.CkOnline{sId}(cindex))./length(obj.GkTest{sId}(cindex));
+                    end                           
+                end
+                
+            end
+        end
+        
+        function obj = computeEvidenceAccumulation(obj)
+            for sId=1:obj.processor.loader.nsessions 
+                if (obj.processor.loader.offlineRuns{sId} > 0 && obj.processor.loader.onlineRuns{sId} > 0) % else no model to test
+                    fprintf("Evidence accumulation on model %d\n",sId);
+                    NumClasses = length(obj.processor.loader.classId);
+                    TrialStart = obj.processor.loader.sessionsDataOnline{sId}.POS(obj.processor.loader.sessionsDataOnline{sId}.TYP == 781);
+                    NumSamples = size(obj.ppTest{sId}, 1);
+                    ipp = 0.5*ones(size(obj.ppTest{sId}, 1), 1);
+                    alpha = 0.97;
+
+                    for samId = 2:NumSamples
+
+                        curr_pp  = obj.ppTest{sId}(samId, 1);
+                        prev_ipp = ipp(samId-1);
+
+                        if ismember(samId, TrialStart)
+                            ipp(samId) = 1./NumClasses;
+                        else
+                            ipp(samId) = prev_ipp.*alpha + curr_pp.*(1-alpha);
+                        end
+                    end
+                    
+                    % plot result
+                    obj.Presenter.PresentAccumulatedEvidence(obj.processor.loader.sessionsNames{sId},obj.processor.Tk{sId},obj.processor.Ck{sId},obj.ppTest{sId},ipp,obj.processor.NumTrialsOnline{sId})
                 end
                 
             end
@@ -157,13 +235,11 @@ classdef DataClassifier
         
         function obj = saveClassifier(obj)
             for sId=1:obj.processor.loader.nsessions
-                if (obj.processor.loader.offlineRuns{sId} == 0)
-                    fprintf("No offline to visualize for session %d\n",sId);
-                else
+                if (obj.processor.loader.offlineRuns{sId} > 0) % else no model to test
                     Model = obj.Models{sId};
                     SelChansId = obj.SelChansId{sId};
                     SelFreqsId = obj.SelFreqsId{sId};
-                    save(obj.processor.loader.sessionsNames{sId}, 'Model', 'SelChansId', 'SelFreqsId');
+                    save(obj.processor.loader.sessionsNames{sId},'Model','SelChansId','SelFreqsId');
                 end
             end
         end
