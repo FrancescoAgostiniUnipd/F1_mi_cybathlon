@@ -163,8 +163,10 @@ classdef DataClassifier
         end
         
         function obj = computeTrainsetAccuracy(obj)
+            
             for sId=1:obj.processor.loader.nsessions 
                 if (obj.processor.loader.offlineRuns{sId} > 0)
+                    
                     fprintf("Computing accuracy model %d\n",sId);
                     NumClasses = length(obj.processor.loader.classId);
                     [obj.GkTrain{sId}, obj.ppTrain{sId}] = predict(obj.Models{sId}, obj.F{sId});
@@ -176,31 +178,33 @@ classdef DataClassifier
                         cindex = obj.processor.Ck{sId} == obj.processor.loader.classId(cId);
                         obj.SSClAccTrain{sId}(cId) = 100*sum(obj.GkTrain{sId}(cindex) == obj.processor.Ck{sId}(cindex))./length(obj.GkTrain{sId}(cindex));
                     end
+
                 end
                 
             end
         end
         
         function obj = computeTestsetAccuracy(obj)
+            lastValidModel = 0;
             for sId=1:obj.processor.loader.nsessions 
-                if (obj.processor.loader.offlineRuns{sId} > 0 && obj.processor.loader.onlineRuns{sId} > 0) % else no model to test
-                    fprintf("Testing accuracy model %d\n",sId);
+                if (obj.processor.loader.onlineRuns{sId} > 0) % else no model to test
                     NumClasses = length(obj.processor.loader.classId);
-                    [obj.GkTest{sId}, obj.ppTest{sId}] = predict(obj.Models{sId}, obj.FOnline{sId});
-                    
-                    %a = obj.GkTest{sId};
-                    %b = obj.LabelIdxOnline{sId};
-                    %c = 
+                    if (obj.processor.loader.offlineRuns{sId} > 0)
+                        lastValidModel = sId;
+                        fprintf("Testing accuracy model %d\n",sId);      
+                        [obj.GkTest{sId}, obj.ppTest{sId}] = predict(obj.Models{sId}, obj.FOnline{sId});
+                    else
+                        fprintf("NO NEW MODEL, using last known %d\n",lastValidModel);
+                        [obj.GkTest{sId}, obj.ppTest{sId}] = predict(obj.Models{lastValidModel}, obj.FOnline{sId});
+                    end
                     
                     obj.SSAccTest{sId} = 100*sum(obj.GkTest{sId}(obj.LabelIdxOnline{sId}) == obj.processor.CkOnline{sId}(obj.LabelIdxOnline{sId}))./length(obj.GkTest{sId}(obj.LabelIdxOnline{sId}));
-                                        
                     obj.SSClAccTest{sId} = nan(NumClasses, 1);
                     for cId = 1:NumClasses
                         cindex = obj.processor.CkOnline{sId} == obj.processor.loader.classId(cId);
                         obj.SSClAccTest{sId}(cId) = 100*sum(obj.GkTest{sId}(cindex) == obj.processor.CkOnline{sId}(cindex))./length(obj.GkTest{sId}(cindex));
-                    end                           
+                    end    
                 end
-                
             end
         end
         
@@ -227,7 +231,7 @@ classdef DataClassifier
                     end
                     
                     % plot result
-                    obj.Presenter.PresentAccumulatedEvidence(obj.processor.loader.sessionsNames{sId},obj.processor.Tk{sId},obj.processor.Ck{sId},obj.ppTest{sId},ipp,obj.processor.NumTrialsOnline{sId})
+                    obj.Presenter.PresentAccumulatedEvidence(obj.processor.loader.sessionsNames{sId},obj.processor.TkOnline{sId},obj.processor.CkOnline{sId},obj.ppTest{sId},ipp,obj.processor.NumTrialsOnline{sId})
                 end
                 
             end

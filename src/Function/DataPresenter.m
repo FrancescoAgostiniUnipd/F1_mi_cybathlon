@@ -189,6 +189,9 @@ classdef DataPresenter
             % Trial 58: good both feet
 
             cindex = Tk == SelTrial;
+            disp('Start of Ck');
+            disp(Ck);
+            disp('End Of Ck');
             [~, ClassIdx] = ismember(unique(Ck(cindex)), CueClasses);
 
             GreyColor = [150 150 150]/255;
@@ -200,27 +203,33 @@ classdef DataPresenter
 
             % Plotting accumulutated evidence
             plot(ipp(cindex), 'k', 'LineWidth', 2);
+            if isempty(ClassIdx)
+                fprintf("ClassIdx Empty!!!\n");
+            else
+                fprintf("ClassIdx Ready to use\n");
+            
+                disp(ClassIdx);
+                % Plotting actual target class
+                yline(ValueClasses(ClassIdx), LineColors{ClassIdx}, 'LineWidth', 5);
 
-            % Plotting actual target class
-            yline(ValueClasses(ClassIdx), LineColors{ClassIdx}, 'LineWidth', 5);
+                % Plotting 0.5 line
+                yline(0.5, '--k');
 
-            % Plotting 0.5 line
-            yline(0.5, '--k');
+                % Plotting thresholds
+                yline(Threshold, 'k', 'Th_{1}');
+                yline(1-Threshold, 'k', 'Th_{2}');
+                hold off;
 
-            % Plotting thresholds
-            yline(Threshold, 'k', 'Th_{1}');
-            yline(1-Threshold, 'k', 'Th_{2}');
-            hold off;
+                grid on;
+                ylim([0 1]);
+                xlim([1 sum(cindex)]);
+                legend('raw prob', 'integrated prob');
+                ylabel('probability/control')
+                xlabel('sample');
+                title(['Trial ' num2str(SelTrial) '/' num2str(NumTrials) ' - Class ' LbClasses{ClassIdx} ' (' num2str(CueClasses(ClassIdx)) ')']);
 
-            grid on;
-            ylim([0 1]);
-            xlim([1 sum(cindex)]);
-            legend('raw prob', 'integrated prob');
-            ylabel('probability/control')
-            xlabel('sample');
-            title(['Trial ' num2str(SelTrial) '/' num2str(NumTrials) ' - Class ' LbClasses{ClassIdx} ' (' num2str(CueClasses(ClassIdx)) ')']);
-
-            sgtitle(name);
+                %sgtitle(name);
+            end
         end
         
         
