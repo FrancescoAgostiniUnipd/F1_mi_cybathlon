@@ -1,4 +1,11 @@
 %% MAIN SCRIPT
+%{
+Description: Main project script, for configuration and run
+Authors: Agostini Francesco (francesco.agostini.5@studenti.unipd.it)
+
+Version: 1.0
+
+%}
 clear all; close all; clc;  % Clear prev environment
 addpath('./Function/');     % Add functions path
 addpath('./Util/');         % Add util path with biosig and laplacian
