@@ -4,10 +4,9 @@ Description: Collection of utils and functions userd for load
               and chain .gdf EEG description file on workspace
 
 Authors: Agostini Francesco (francesco.agostini.5@studenti.unipd.it)
-          Deschaux Ophélie   (opheliecandicemarine.deschaux@studenti.unipd.it)
           Marcon Francesco   (francesco.marcon.2@studenti.unipd.it)
 
-Version: 0.5
+Version: 1.0
 
 %}
 %% Class Dataloader definition
@@ -163,7 +162,7 @@ classdef DataLoader
                 fprintf("Loading session #%d %s \n",i,obj.sessionsPaths{i});
                 obj = obj.loadSession(obj.sessionsPaths{i},i);
                 if (obj.offlineRuns{i} == 0)
-                    fprintf("No offline to visualize for session %d\n",i);
+                    %fprintf("No offline to visualize for session %d\n",i);
                 else
                     obj.Presenter.PresentRawData(obj.sessionsPaths{i},obj.sessionsDataOffline{i}.P,obj.sessionsData{i}.TYP,obj.sessionsData{i}.DUR,obj.sessionsData{i}.POS,obj.sessionsData{i}.Rk,obj.sessionsData{i}.Mk);
                 end
@@ -326,7 +325,7 @@ classdef DataLoader
                 
             end % session files iteration
             
-            fprintf("Session %d - OF= %d | ON= %d  = \n",n,obj.offlineRuns{n},obj.onlineRuns{n});
+            %fprintf("Session %d - OF= %d | ON= %d  = \n",n,obj.offlineRuns{n},obj.onlineRuns{n});
         end % load session function
         
         %% Getter for sessions number

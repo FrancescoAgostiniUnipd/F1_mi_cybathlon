@@ -5,10 +5,8 @@ Description: Collection of utils and functions used for train
              processing
 
 Authors: Agostini Francesco (francesco.agostini.5@studenti.unipd.it)
-          Deschaux Ophélie   (opheliecandicemarine.deschaux@studenti.unipd.it)
-          Marcon Francesco   (francesco.marcon.2@studenti.unipd.it)
 
-Version: 0.1
+Version: 1.0
 
 %}
 
@@ -25,6 +23,8 @@ classdef DataClassifier
         NumSelFeatures
         LabelIdx
         LabelIdxOnline
+        LabelIdxTrain
+        LabelIdxTest
         % Single session data for single model
         F
         FOnline
@@ -32,7 +32,10 @@ classdef DataClassifier
         Models
         
         % Single session data for overall model
-        CkTotal
+        CkTest
+        CkTrain
+        FTest
+        FTrain
         NumWinsTotal
         fullfreqsTotal
         FTotal
@@ -49,6 +52,7 @@ classdef DataClassifier
         
         SSAccTest
         ppTest
+        ippTest
         GkTest
         SSClAccTest
         
@@ -78,7 +82,11 @@ classdef DataClassifier
             obj.LabelIdxOnline        = [];
             
             
-            obj.CkTotal         = [];
+            obj.CkTest          = [];
+            obj.CkTrain         = [];
+            obj.FTest           = [];
+            obj.FTrain          = [];
+            
             obj.NumWinsTotal    = [];
             obj.FTotal          = [];
             obj.UTotal          = [];
@@ -93,6 +101,7 @@ classdef DataClassifier
             
             obj.SSAccTest               = []; 
             obj.ppTest                  = [];
+            obj.ippTest                 = [];
             obj.GkTest                  = [];
             obj.SSClAccTest             = [];
             
@@ -107,6 +116,7 @@ classdef DataClassifier
             obj = obj.computeTrainsetAccuracy();
             obj = obj.computeTestsetAccuracy();
             obj = obj.computeEvidenceAccumulation();
+            obj = obj.computePerformance();
             obj = obj.saveClassifier();
         end
         
@@ -130,7 +140,10 @@ classdef DataClassifier
                     obj.SelChansId{sId} = SelChansId;
                     obj.SelFreqsId{sId} = SelFreqsId;
                     % Create dataset Labels
-                    obj.LabelIdx{sId} = obj.processor.Ck{sId} == 771 | obj.processor.Ck{sId} == 773;
+                    obj.LabelIdx{sId} = obj.processor.Ck{sId} == 771 | obj.processor.Ck{sId} == 773 | obj.processor.Ck{sId} == 783;
+                    % Complete parameter
+                    obj.FTrain = cat(1,obj.FTrain,obj.F{sId});
+                    obj.CkTrain = cat(1,obj.CkTrain,obj.processor.Ck{sId});
                     
                 end  
                 
@@ -140,12 +153,17 @@ classdef DataClassifier
                     [~, SelFreqsId] = ismember(obj.SelFreqs, obj.processor.loader.sessionsDataOnline{sId}.freqs);
                     
                     obj.FOnline{sId} = nan(obj.processor.NumWinsOnline{sId}, obj.NumSelFeatures);
+                    
                     for ftId = 1:obj.NumSelFeatures
                         cfrq  = SelFreqsId(ftId);
                         cchan = SelChansId(ftId);
                         obj.FOnline{sId}(:, ftId) = obj.processor.UOnline{sId}(:, cfrq, cchan);
                     end
-                    obj.LabelIdxOnline{sId} = obj.processor.CkOnline{sId} == 771 | obj.processor.CkOnline{sId} == 773;
+                    
+                    obj.LabelIdxOnline{sId} = obj.processor.CkOnline{sId} == 771 | obj.processor.CkOnline{sId} == 773 | obj.processor.CkOnline{sId} == 783;
+                    
+                    obj.FTest = cat(1,obj.FTest,obj.FOnline{sId});
+                    obj.CkTest = cat(1,obj.CkTest,obj.processor.CkOnline{sId});
                 end
             end      
         end
@@ -159,7 +177,10 @@ classdef DataClassifier
                     obj.Presenter.PresentClassifier(obj.processor.loader.sessionsNames{sId},obj.F{sId},obj.processor.Ck{sId},obj.Models{sId},obj.LabelIdx{sId},obj.SelChans,obj.SelFreqs);
                 end
             end
-            %obj.Model = fitcdiscr(obj.F(obj.LabelIdx, :), obj.Ck(obj.LabelIdx), 'DiscrimType','quadratic');
+            
+            obj.LabelIdxTrain = obj.CkTrain == 771 | obj.CkTrain == 773;
+            obj.Model = fitcdiscr(obj.FTrain(obj.LabelIdxTrain, :), obj.CkTrain(obj.LabelIdxTrain), 'DiscrimType','quadratic');
+            obj.Presenter.PresentClassifier('Global',obj.FTrain,obj.CkTrain,obj.Model,obj.LabelIdxTrain,obj.SelChans,obj.SelFreqs);
         end
         
         function obj = computeTrainsetAccuracy(obj)
@@ -167,7 +188,7 @@ classdef DataClassifier
             for sId=1:obj.processor.loader.nsessions 
                 if (obj.processor.loader.offlineRuns{sId} > 0)
                     
-                    fprintf("Computing accuracy model %d\n",sId);
+                    fprintf("Computing accuracy model #%d\n",sId);
                     NumClasses = length(obj.processor.loader.classId);
                     [obj.GkTrain{sId}, obj.ppTrain{sId}] = predict(obj.Models{sId}, obj.F{sId});
 
@@ -191,14 +212,15 @@ classdef DataClassifier
                     NumClasses = length(obj.processor.loader.classId);
                     if (obj.processor.loader.offlineRuns{sId} > 0)
                         lastValidModel = sId;
-                        fprintf("Testing accuracy model %d\n",sId);      
+                        fprintf("Testing accuracy model #%d\n",sId);      
                         [obj.GkTest{sId}, obj.ppTest{sId}] = predict(obj.Models{sId}, obj.FOnline{sId});
                     else
-                        fprintf("NO NEW MODEL, using last known %d\n",lastValidModel);
+                        fprintf("Testing accuracy with set #%d, using last known model #%d\n",sId,lastValidModel);
                         [obj.GkTest{sId}, obj.ppTest{sId}] = predict(obj.Models{lastValidModel}, obj.FOnline{sId});
                     end
                     
                     obj.SSAccTest{sId} = 100*sum(obj.GkTest{sId}(obj.LabelIdxOnline{sId}) == obj.processor.CkOnline{sId}(obj.LabelIdxOnline{sId}))./length(obj.GkTest{sId}(obj.LabelIdxOnline{sId}));
+                    
                     obj.SSClAccTest{sId} = nan(NumClasses, 1);
                     for cId = 1:NumClasses
                         cindex = obj.processor.CkOnline{sId} == obj.processor.loader.classId(cId);
@@ -210,32 +232,77 @@ classdef DataClassifier
         
         function obj = computeEvidenceAccumulation(obj)
             for sId=1:obj.processor.loader.nsessions 
-                if (obj.processor.loader.offlineRuns{sId} > 0 && obj.processor.loader.onlineRuns{sId} > 0) % else no model to test
-                    fprintf("Evidence accumulation on model %d\n",sId);
+                if (obj.processor.loader.onlineRuns{sId} > 0)
+                    fprintf("Computing Evidence accumulation on model #%d\n",sId);
                     NumClasses = length(obj.processor.loader.classId);
                     TrialStart = obj.processor.loader.sessionsDataOnline{sId}.POS(obj.processor.loader.sessionsDataOnline{sId}.TYP == 781);
                     NumSamples = size(obj.ppTest{sId}, 1);
-                    ipp = 0.5*ones(size(obj.ppTest{sId}, 1), 1);
+                    obj.ippTest{sId} = 0.5*ones(size(obj.ppTest{sId}, 1), 1);
                     alpha = 0.97;
 
                     for samId = 2:NumSamples
 
                         curr_pp  = obj.ppTest{sId}(samId, 1);
-                        prev_ipp = ipp(samId-1);
+                        prev_ipp = obj.ippTest{sId}(samId-1);
 
                         if ismember(samId, TrialStart)
-                            ipp(samId) = 1./NumClasses;
+                            obj.ippTest{sId}(samId) = 1./NumClasses;
                         else
-                            ipp(samId) = prev_ipp.*alpha + curr_pp.*(1-alpha);
+                            obj.ippTest{sId}(samId) = prev_ipp.*alpha + curr_pp.*(1-alpha);
                         end
                     end
                     
                     % plot result
-                    obj.Presenter.PresentAccumulatedEvidence(obj.processor.loader.sessionsNames{sId},obj.processor.TkOnline{sId},obj.processor.CkOnline{sId},obj.ppTest{sId},ipp,obj.processor.NumTrialsOnline{sId})
+                    obj.Presenter.PresentAccumulatedEvidence(obj.processor.loader.sessionsNames{sId},obj.processor.TkOnline{sId},obj.processor.CkOnline{sId},obj.ppTest{sId},obj.ippTest{sId},obj.processor.NumTrialsOnline{sId})
                 end
                 
             end
         end
+        
+        function obj = computePerformance(obj)
+            Threshold     = 0.7;
+            for sId=1:obj.processor.loader.nsessions 
+                if (obj.processor.loader.onlineRuns{sId} > 0)
+                    fprintf("Computing Performance on session #%d\n",sId);
+                    ActualClass = obj.processor.loader.sessionsDataOnline{sId}.TYP(obj.processor.loader.sessionsDataOnline{sId}.TYP == 771 | obj.processor.loader.sessionsDataOnline{sId}.TYP == 773 | obj.processor.loader.sessionsDataOnline{sId}.TYP == 783);
+                    Decision = nan(obj.processor.NumTrialsOnline{sId}, 1);
+
+                    for trId = 1:obj.processor.NumTrialsOnline{sId}
+                        cstart = obj.processor.CFeedbackPOSOnline{sId}(trId);
+                        cstop  = obj.processor.CFeedbackPOSOnline{sId}(trId) + obj.processor.CFeedbackDUROnline{sId}(trId) - 1;
+                        cipp = obj.ippTest{sId}(cstart:cstop);
+
+                        endpoint = find( (cipp >= Threshold) | (cipp <= 1 - Threshold), 1, 'first' );
+
+                        if(isempty(endpoint))
+                            Decision(trId) = 783;
+                            continue;
+                        end
+
+                        if(cipp(endpoint) >= Threshold)
+                            Decision(trId) = 771;
+                        elseif (cipp(endpoint) <= Threshold)
+                            Decision(trId) = 773;
+                        end
+                    end
+                    
+                    ActiveTrials = ActualClass ~= 783;
+                    RestTrials = ActualClass == 783;
+
+                    PerfActive  = 100 * (sum(ActualClass(ActiveTrials) == Decision(ActiveTrials))./sum(ActiveTrials));
+                    PerfResting = 100 * (sum(ActualClass(RestTrials) == Decision(RestTrials))./sum(RestTrials));
+
+                    RejTrials = Decision == 783;
+
+                    PerfActive_rej = 100 * (sum(ActualClass(ActiveTrials & ~RejTrials) == Decision(ActiveTrials & ~RejTrials))./sum(ActiveTrials & ~RejTrials));
+                
+                    fprintf("Performance:  Active=%.2f PerfResting=%.2f PerfActiveRej=%.2f\n",PerfActive,PerfResting,PerfActive_rej);
+                end
+            end
+            
+            
+        end
+        
         
         function obj = saveClassifier(obj)
             for sId=1:obj.processor.loader.nsessions
@@ -243,7 +310,7 @@ classdef DataClassifier
                     Model = obj.Models{sId};
                     SelChansId = obj.SelChansId{sId};
                     SelFreqsId = obj.SelFreqsId{sId};
-                    save(obj.processor.loader.sessionsNames{sId},'Model','SelChansId','SelFreqsId');
+                    save(strcat('./Classifiers/',obj.processor.loader.sessionsNames{sId}),'Model','SelChansId','SelFreqsId');
                 end
             end
         end

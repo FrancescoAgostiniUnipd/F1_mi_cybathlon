@@ -4,10 +4,9 @@ Description: Collection of utils and functions used for process
              loaded data on workspace
 
 Authors: Agostini Francesco (francesco.agostini.5@studenti.unipd.it)
-          Deschaux Ophélie   (opheliecandicemarine.deschaux@studenti.unipd.it)
           Marcon Francesco   (francesco.marcon.2@studenti.unipd.it)
 
-Version: 0.1
+Version: 1.0
 
 %}
 %% Class DataProcessing definition
@@ -445,7 +444,7 @@ classdef DataProcessing
                 if (obj.loader.offlineRuns{i} == 0)
                     %fprintf("No offline to visualize for session %d\n",i);
                 else
-                    %obj.Presenter.PresentErdErs(obj.loader.sessionsNames{i}, obj.MinTrialDur{i}, obj.loader.wshift, 0 ,obj.NumClasses{i},obj.ERD{i},obj.loader.classId,obj.freqs{i},obj.loader.channelLb,obj.loader.classLb,obj.tCk{i});
+                    obj.Presenter.PresentErdErs(obj.loader.sessionsNames{i}, obj.MinTrialDur{i}, obj.loader.wshift, 0 ,obj.NumClasses{i},obj.ERD{i},obj.loader.classId,obj.freqs{i},obj.loader.channelLb,obj.loader.classLb,obj.tCk{i});
                     obj.Presenter.PresentFisherScore(obj.loader.sessionsNames{i}, obj.NumRuns{i},obj.NumFreqs{i}, obj.NumChans{i}, obj.loader.channelLb, obj.freqs{i}, obj.FisherScore{i})
                 end
             end
