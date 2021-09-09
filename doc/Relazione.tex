@@ -1,0 +1,103 @@
+% Benvenuti nel template per le relazioni di Sperimentazioni di Fisica 1 del corso triennale in Astronomia dell'Università di Padova.
+% Per compilarlo, cliccate su Menu, selezionate come compilatore "pdfLaTeX", TeX Live Version 2020 (o uno degli altri, whatever works), e come documento principale "Relazione.tex"
+
+%%% Preambolo del documento %%%
+% Non toccate questa roba, a meno che non siate abbastanza sgamati da sapere quello che state facendo, tipo vi piacciono di più certi pacchetti rispetto ad altri, o magari ve ne manca qualcuno.
+\documentclass[a4paper, titlepage]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage{amsmath}
+\usepackage{listings}
+\usepackage{textcomp}
+\usepackage{multirow}
+\usepackage{multicol}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{floatflt}
+\usepackage{epsfig}
+\usepackage{pstricks}
+\usepackage{subfigure}
+\usepackage[labelfont=bf, font=scriptsize]{caption}
+\usepackage[english]{varioref}
+\usepackage[suftesi]{frontespizio}
+\usepackage{color}
+\usepackage{tikz}
+\usepackage{caption}
+\usepackage{pgfplots}
+\usepackage{comment}
+\usepackage{lipsum}
+\pgfplotsset{compat=1.16}
+\usepackage{listings} %red, green, blue, yellow, cyan, magenta, black, white
+\definecolor{mygreen}{RGB}{28,172,0} % color values Red, Green, Blue
+\definecolor{mylilas}{RGB}{170,55,241}
+
+\lstset{language=Matlab,%
+    %basicstyle=\color{red},
+    breaklines=true,%
+    morekeywords={matlab2tikz},
+    keywordstyle=\color{blue},%
+    morekeywords=[2]{1}, keywordstyle=[2]{\color{black}},
+    identifierstyle=\color{black},%
+    stringstyle=\color{mylilas},
+    commentstyle=\color{mygreen},%
+    showstringspaces=false,%without this there will be a symbol in the places where there is a space
+    numbers=left,%
+    numberstyle={\tiny \color{black}},% size of the numbers
+    numbersep=9pt, % this defines how far the numbers are from the text
+    emph=[1]{for,end,break},emphstyle=[1]\color{red}, %some words to emphasise
+    %emph=[2]{word1,word2}, emphstyle=[2]{style},    
+}
+
+%%% Il documento vero e proprio %%%
+\begin{document}
+
+%%% Frontespizio %%%
+% Questa serie di comandi genera il frontespizio della relazione.
+% Cambiate: l'Anno Accademico, Data e Titolo della relazione, il nome degli appartenenti al gruppo con annessa matricola e mail istituzionale. Se siete due o quattro in gruppo, basta togliere/inserire una riga Candidato.
+% NON toccate i comandi con accanto con CTT (Can't Touch This).
+% !!! NOTA PER LA CORRETTA VISUALIZZAZIONE DEL FRONTESPIZIO. !!!
+% Quando si compila un file su Overleaf, per velocizzare le successive compilazioni questi genera una cache, e da questa prende gli elementi che, a senso suo, non sono cambiati nel testo. Quindi per quanto vi possiate ostinare a compilare, vedrete sempre il primo frontespizio che ha compilato (quello con NomeCognome etc etc) e non le ultime modifica.
+% Come evitare ciò, e visualizzare il frontespizio con i vostri nomi, cognomi e numeri matricola? Così: cliccate sull'icona accanto a Recompile, quella con il simbolo del documento, e successivamente sul simbolo del cestino (Clear cached files). Liberate la cache, modificate il frontespizio, e ricompilate. Così dovreste riuscire a vedere nel file compilato le vostre modifiche al frontespizio. Ricordatevi di svuotare la cache del file Overleaf ogni volta che volete modificare qualcosa nel frontespizio.
+\begin{frontespizio}
+\Universita{Padova} % CTT
+\Logo{Figure/logo_unipd} % CTT
+\Divisione{Neurorobotics and Neurorehabilitation A.A. 2020 2021} % CTT
+\Corso[Masters'degree]{Computer engineering} % CTT, a meno che non cambi la denominazione del corso
+\Annoaccademico{2020-2021+1}
+\Titoletto{Project 5} % CTT
+\Titolo{Longitudinal analyses on MI BMI data}
+\Sottotitolo{09 September 2021}
+\NCandidati{Team} % CTT
+\Candidato[2005833]{Francesco Agostini, \textsf {francesco.agostini.5@studenti.unipd.it}}
+\NRelatore{Teacher}{} % CTT
+\Relatore{Prof. Luca Tonin} % CTT, a meno che non sia cambiato il Prof.
+\Relatore{Prof. Emanuela Formaggio} % CTT, a meno che non sia cambiato il Prof.
+\Relatore{Prof. Maria Rubega} % CTT, a meno che non sia cambiato il Prof.
+\end{frontespizio}
+\IfFileExists{\jobname-frn.pdf}{}{%
+\immediate\write18{pdflatex \jobname-frn}} % ASSOLUTAMENTE CTT, è il comando che materialmente vi genera il frontespizio.
+
+%%% Indice %%%
+\tableofcontents
+
+\newpage
+%%% Sezioni %%%
+% Qui inizia la relazione vera e propria.
+% Le Sezioni sono singoli file .tex dentro la cartella Sezioni. Potete a libera scelta scrivere tutto su un singolo file e chiamare all'interno di questi con il comando \section{} le varie sezioni, oppure dividere le singole sezioni in più file Sezione_i.tex, e poi inserirle tutte con \input{Sezioni/Sezione_i.tex} per i = 1 ... N
+\input{Sezioni/Sezione_1.tex}	
+\input{Sezioni/Sezione_2.tex}
+\input{Sezioni/Sezione_3.tex}	
+\input{Sezioni/Sezione_4.tex}
+\input{Sezioni/Sezione_5.tex}	
+
+
+\newpage
+%%% Appendici %%%
+% Eventuali appendici vanno qui. Se non avete appendici da inserire, togliete/commentate queste righe.
+%\appendix
+%\input{Sezioni/Appendice.tex}	
+
+\end{document}
+
+% Credits: basato sulle relazioni di laboratorio di Nicola Bellucco, Marco Codato e Erica Korb.

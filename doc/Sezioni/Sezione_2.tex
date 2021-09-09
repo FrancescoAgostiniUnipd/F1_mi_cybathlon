@@ -1,0 +1,35 @@
+\section{Methods}\label{sec:Methods} 
+All method used in this pipeline come from the classroom exercise and home works. But are organized and structured in order to work with different datasets just changing configuration on the main script and inserting session data in the right place.
+\subsection{Cofiguration}\label{subsec:configuration}
+For this project following the data specification we choose the following configuration parameter. The first part of the configuration is used to set the necessary parameter to spectrogram computation. The second part of the config is dedicated to the classifier setup after feature selection procedure in phase 1. The last config part is dedicated to the Data Presenter class, and allow to choose which plot show during pipeline.
+Datapath var is the root source data folder that will used by the project, and var f is the frequency vector (from:step:to)
+
+\lstinputlisting{Figure/Code/config.m}
+
+
+\subsection{Data Loading}\label{subsec:loading}
+Data loading procedure starts looking with listSession() function for all subfolder in datapath, exluded . and .. for obvious reason. Each folder contained in datapath will be considered a session for the system and will be sorted by name. In our case with the timestamp at the beginning of each session folder the system will be sort in chronological order. After session listing the DataLoader class procede iterating each session (folder) with loadSessions() function and start to load the each session with loadSession() function. 
+
+\subsection{Data Chaining}\label{subsec:status}
+The loadSession() function start enumerating all gdf files and procede loading gdfs file using sload function. For each runs the function use the preprocessing function in order to do spatial filter operation and spectrogram computing. After this preprocessing operation the function chain all event vectors TYP (type) DUR(Duration in sample) POS(Position in sample). Keeping splitted offline runs from online runs. These information are stored as class member with name sessionsDataOffline(sessionIndex) that contain all chained data of offline runs, and sessionsDataOnline(sessionIndex) that contain all online runs information.
+\subsection{Spatial Filtering}\label{subsec:spatial}
+For the spatial filtering the laplacian filter is used with function contained in laplacian16.mat file. This operation is necessary for a better comprension of data across the EEG channels during the spectrogram computation. In fact differently from Common average reference tecnique that introduce 'noise' from near channels, laplacian filtering approssimate the 2nd order derivative subtracting the mean acrivity of the neighbor channels. The result is an highlited spatial location of SMR.   
+\subsection{Spectrogram and PSD}\label{subsec:psd}
+Using the spectrogram compute function provided in clas,s the spectrogram of each run is computed and stored in vector named P, as TYP DUR POS events information, the spectrogram vector are chained and inserted in the appropriate online/offline session vector, ready to be used from the next step in DataProcessing class.The spectrogram computing are necessary for enhance the spectral resolution in order to improve performances making a spectro temporal analysis of the signal, obtained from spatial filtering output. Using Welch's method configured with projects parameter we can compute power spectral density over time. This operation add a new dimension to the original dataset, giving us the possibility to extract more information from EEG signals.
+\subsection{Feature Selection}\label{subsec:feature_selection}
+Now all necessary information for feature selection is ready and available in the DataLoader class, and DataProcessing class can start to run using the DataLoader instance for session data fetch. Differently from DataLoader the functions for elaborate offline and online session are splitted, because not all processing function needed for feature selection on offline sessions are necessary for online sessions. The class start with Cue and Fix vector preparation based on the events vector from DataLoader, now the DataProcessor is ready to do ERD/ERS data extraction necessary for analysis of event sinchronization and desinchronization. The project is now ready to plot the first output Power Spectral Density over time (Figure 2). This first output give us a first idea about the interesting frequency for feature selection. After Log operation on vectors the pipeline proceed computing fisher score and showing it using DataPresenter's plot function. Fisher score generate a feature matrix where each cell represent the distance between distribution of the two feature classes. With this method we can see frequencies and channels with higher distance between classes, that allow us an easy classification. Finally we are ready to understand which channel and frequency are good choice for the classifier as discriminant. The result of this analysis on offline sessions give us the parameter to configure the classification operation in the project configuration. All extracted data are saved in different class member splitted in offline and online sessions, and accessible as a vector by using session index.
+\subsection{Dataset Creation}\label{subsec:status}
+Now finally we can start with classification operation, as first task we have to create datasets for train and test operation. For each session the offline session log data from DataProcessor class, are used to create classifier train datasets, online session are used to prepare test datasets for models validation. 
+\subsection{Model Training}\label{subsec:status}
+At the end of dataset creation procedure the modelCreation() function are invoked for all session that provide appropriate train dataset, after model creation the function try to create a single model, trained with all train dataset and used only for final discussion and comparison. Every model were stored in Models(sessionIndex) class member that contain the model instance. DataPresenter class if configured show for each model the related plot with the feature cluster, giving us the possibility to understand if the model is able to find a discriminant between the given features. This operation is the first checkpoint to understand if we did a good job with feature selection. In Figure 5 we can see the classification discriminant output on each offline runs.  
+\subsection{Classifier Test}\label{subsec:status}
+After model creation and plot we can start with model accuracy validation using test datasets. Testing procedure starts using test dataset of each session on the same session's model. If the session is composed only by online runs the test are done on the last valid model of previous sessions. 
+\subsection{Performance on Test}\label{subsec:status}
+At the end of the pipeline, the computation of performance parameter is done in order to provide a performance parameter of each classifier. Using evidence accumulation framework and plotting results for each test sessions.
+
+
+
+
+
+
+

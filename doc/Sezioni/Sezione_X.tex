@@ -1,0 +1,40 @@
+\subsection{Esempio di figura}\label{subsec:esempio_figura}
+Se volete inserire una imagine/figura, trovate l'esempio qui sotto.
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.5\textwidth]{Figure/esempio.jpg}
+    \caption{Esempio di figura. La caption di una Figura va sempre sotto la figura.}
+    \label{fig:esempio_fig}
+\end{figure}\\
+Il che genera la Fig.\,\ref{fig:esempio_fig}.\\
+Formati che piacciono a LaTeX: in pratica tutti, ma solitamente si trovano i soliti .pdf, .eps e .jpg
+
+\subsection{Esempio di tabella}\label{subsec:esempio_tabella}
+Se invece volete inserire una tabella, l'esempio lo trovate qui sotto, in Tab.\,\ref{tab:esempio_tab}
+
+
+
+\begin{table}[ht]
+\centering
+    \caption{Esempio di Tabella multirow.}
+    \label{tab:esempio_tab_multirow}
+    \begin{tabular}{cc}
+    \toprule
+    \multirow{2}{*}{Multirow}&X\\
+    &X\\
+    \bottomrule
+    \end{tabular}
+\end{table}
+
+\begin{table}[!ht]
+\centering
+    \caption{Esempio di Tabella multicolumn.}
+    \label{tab:esempio_tab_multicolumn}
+    \begin{tabular}{cc}
+    \toprule
+    \multicolumn{2}{c}{Multi-column}\\
+    \midrule
+    X&X\\
+    \bottomrule
+    \end{tabular}
+\end{table}
